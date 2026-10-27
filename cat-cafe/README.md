@@ -1,6 +1,6 @@
 # こもれび猫日和 — 保護猫カフェの提案デモ
 
-公開URL: https://kazumateraokashoten-spec.github.io/cat-cafe/
+公開URL: https://kazuma1107.github.io/cat-cafe/
 
 架空の保護猫カフェを題材とする自主制作ポートフォリオ。実店舗・保護活動・譲渡の実績を示すものではありません。フォームはブラウザ内で確認表示するだけで、送信・保存・予約・決済は行いません。
 

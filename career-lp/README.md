@@ -2,7 +2,7 @@
 
 自主制作の架空キャリア支援サービスLP。実際の求人・予約・利用実績ではありません。
 
-- Live preview: https://kazumateraokashoten-spec.github.io/career-lp/
+- Live preview: https://kazuma1107.github.io/career-lp/
 - Design rationale: design-note.html
 - Stack: static HTML/CSS/JS, no runtime dependencies or analytics.
 - Consultation UI is browser-memory-only; no data transmission or persistence.

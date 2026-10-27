@@ -2,7 +2,7 @@
 
 自主制作の架空データによる、企業サイト管理CMSのインタラクティブ・プロトタイプ。受託実績や完成した本番CMSを表すものではありません。
 
-- 公開予定URL: https://kazumateraokashoten-spec.github.io/cms-console/
+- 公開予定URL: https://kazuma1107.github.io/cms-console/
 - HTML / CSS / ES modules、外部ライブラリ・分析タグ・フォント・API通信なし。
 - 100件のサンプルページ、5カテゴリー。検索・フィルター・ページ送り。
 - HTML編集、隔離されたiframeプレビュー、下書き・申請・差し戻し・公開。
