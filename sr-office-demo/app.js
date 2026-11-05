@@ -5,7 +5,7 @@
     portal: '① 顧問先との資料共有',
     documents: '② 公文書の取得・仕分け',
     mail: '③ Outlookメール整理',
-    payroll: '④ 弥生給与の前後作業',
+    payroll: '④ 給与計算の自動化',
     cases: '⑤ 手続・給与の進捗管理',
     architecture: '本番構成と検証事項'
   };
@@ -19,12 +19,7 @@
     { id: 'DOC-03', name: '決定通知書_スキャン.pdf', subject: '所属先を特定できない', code: '', key: 'U-202611-052' },
     { id: 'DOC-04', name: '雇用保険 資格取得確認通知書_再取得.pdf', subject: '山田 太郎', code: '28001234', key: 'A-202611-001' }
   ];
-  const payrollLabels = [
-    ['勤怠データの受領', '対象月・受領元を確認'],
-    ['計算前の事前照合', '社員コードと重複行を確認'],
-    ['計算後の差分確認', '変動金額を職員が確認'],
-    ['給与資料の共有準備', '公開承認はポータルで実施']
-  ];
+  const payrollLabels = ['架空の勤怠取得', '入力データ検証', '支給・控除・差引支給の計算', '前月との差額確認', '顧問先への共有準備'];
   const $ = id => document.getElementById(id);
   const docs = originalDocs.map(d => ({ ...d, status: 'received', company: null, shared: false }));
   const originalMails = [
@@ -39,8 +34,7 @@
     { id: 'RES-R02', type: 'rules', company: 'def', name: '就業規則_説明用2026年版.pdf', ready: true, published: false },
     { id: 'RES-P01', type: 'payroll', company: 'abc', name: '2026年11月_給与資料_説明用.pdf', ready: false, published: false }
   ];
-  const payrollDone = [false, false, false, false];
-  const payrollState = { received: false, prechecked: false, issues: [false, false], csv: false, reconciled: false, differenceChecked: false, prepared: false };
+  const payrollState = { scenario: 'normal', phase: 0, status: 'idle', issues: [], rows: [], totals: null, prepared: false };
   const cases = [
     { id: 'PROC-241', company: 'abc', title: '雇用保険 資格取得', person: '山田 太郎', owner: '田中', due: '11/12', priority: true, stage: 1, type: 'doc', doc: 'DOC-01', steps: ['依頼受付', '資料確認', '電子申請', '公文書確認', '顧問先共有', '完了'] },
     { id: 'PROC-242', company: 'def', title: '社会保険 資格取得', person: '佐藤 花子', owner: '鈴木', due: '11/15', priority: true, stage: 2, type: 'doc', doc: 'DOC-02', steps: ['依頼受付', '資料確認', '電子申請', '公文書確認', '顧問先共有', '完了'] },
@@ -72,10 +66,11 @@
     renderLogs();
   }
   function renderLogs() {
-    for (const id of ['overview-log', 'document-log', 'mail-log']) {
+    for (const id of ['overview-log', 'document-log', 'mail-log', 'payroll-log']) {
       const target = $(id);
       target.replaceChildren();
-      for (const item of (id === 'mail-log' ? history.filter(x => x.text.startsWith('メール')) : history).slice(0, id === 'overview-log' ? 3 : 10)) {
+      const entries = id === 'mail-log' ? history.filter(x => x.text.startsWith('メール')) : id === 'payroll-log' ? history.filter(x => x.text.startsWith('給与')) : history;
+      for (const item of entries.slice(0, id === 'overview-log' ? 3 : 10)) {
         const li = element('li');
         li.append(element('time', '', item.time), element('span', '', item.text));
         target.append(li);
@@ -92,7 +87,7 @@
     $('kpi-review').innerHTML = String(review) + '<small>件</small>';
     $('kpi-shared').innerHTML = String(shared) + '<small>件</small>';
     $('kpi-mail').innerHTML = String(mailReview) + '<small>件</small>';
-    $('kpi-payroll').innerHTML = String(payrollDone.filter(Boolean).length) + '<small>/ 4</small>';
+    $('kpi-payroll').innerHTML = String(payrollState.phase) + '<small>/ 5</small>';
     $('kpi-cases').innerHTML = String(cases.filter(c => c.stage < c.steps.length - 1).length) + '<small>件</small>';
     $('nav-review').textContent = String(review);
     $('nav-mail').textContent = String(mailReview);
@@ -372,154 +367,208 @@
     renderAll();
     announce('メール処理を初期化しました。');
   }
-  function payrollResetState() {
-    payrollState.received = false;
-    payrollState.prechecked = false;
-    payrollState.issues = [false, false];
-    payrollState.csv = false;
-    payrollState.reconciled = false;
-    payrollState.differenceChecked = false;
+  const payrollProfiles = [
+    { code: '001', name: '山田 太郎', base: 280000, overtimeRate: 2200, transport: 12000, deduction: 57000, previousNet: 245200 },
+    { code: '002', name: '佐藤 花子', base: 260000, overtimeRate: 2000, transport: 10000, deduction: 52500, previousNet: 225500 },
+    { code: '003', name: '高橋 健', base: 310000, overtimeRate: 2500, transport: 15000, deduction: 66000, previousNet: 257000 }
+  ];
+  const normalAttendance = [
+    { code: '001', days: 20, overtimeHours: 6 },
+    { code: '002', days: 19, overtimeHours: 4 },
+    { code: '003', days: 21, overtimeHours: 2 }
+  ];
+  const badAttendance = [
+    { code: '001', days: 20, overtimeHours: 6 },
+    { code: '002', days: 19, overtimeHours: 4 },
+    { code: '002', days: 19, overtimeHours: 4 },
+    { code: '', days: 20, overtimeHours: 2 }
+  ];
+  let payrollRunSerial = 0;
+  const yen = value => '¥' + Number(value).toLocaleString('ja-JP');
+  const signedYen = value => (value > 0 ? '+' : value < 0 ? '−' : '±') + yen(Math.abs(value));
+  function payrollAttendance() {
+    return payrollState.scenario === 'exception' ? badAttendance : normalAttendance;
+  }
+  function payrollResetState(scenario = 'normal') {
+    payrollRunSerial++;
+    payrollState.scenario = scenario;
+    payrollState.phase = 0;
+    payrollState.status = 'idle';
+    payrollState.issues = [];
+    payrollState.rows = [];
+    payrollState.totals = null;
     payrollState.prepared = false;
     const resource = portalResources.find(r => r.id === 'RES-P01');
     resource.ready = false;
     resource.published = false;
     cases.find(c => c.id === 'PAY-211').stage = 0;
-    log('給与の前後作業を初期化しました。');
+    log('給与：説明用の計算状態を初期化。');
     renderAll();
-    announce('給与の前後作業を初期化しました。');
   }
-  function runPrecheck() {
-    if (!payrollState.received || payrollState.prechecked) return;
-    payrollState.prechecked = true;
-    log('給与：勤怠3行を事前照合。社員コード欠落と重複を検出。');
-    renderAll();
-    announce('2件の確認事項が見つかりました。');
+  function validatePayrollInput(rows) {
+    const issues = [];
+    const seen = new Set();
+    const known = new Set(payrollProfiles.map(p => p.code));
+    rows.forEach((row, index) => {
+      const position = index + 1;
+      if (!row.code) issues.push(position + '行目：社員コードがありません。');
+      else if (!known.has(row.code)) issues.push(position + '行目：登録されていない社員コードです。');
+      else if (seen.has(row.code)) issues.push(position + '行目：社員コード' + row.code + 'が重複しています。');
+      if (row.code) seen.add(row.code);
+      if (!Number.isInteger(row.days) || row.days < 0 || row.days > 31) issues.push(position + '行目：勤務日数が範囲外です。');
+      if (!Number.isFinite(row.overtimeHours) || row.overtimeHours < 0 || row.overtimeHours > 100) issues.push(position + '行目：残業時間が範囲外です。');
+    });
+    for (const profile of payrollProfiles) {
+      if (!seen.has(profile.code)) issues.push('社員コード' + profile.code + 'の勤怠がありません。');
+    }
+    return issues;
   }
-  function resolvePayrollIssue(index) {
-    if (!payrollState.prechecked || payrollState.issues[index]) return;
-    payrollState.issues[index] = true;
-    log('給与：' + (index === 0 ? '社員コード欠落' : '重複行') + 'を職員が確認済みに変更。');
+  function calculatePayroll(rows) {
+    const profiles = new Map(payrollProfiles.map(p => [p.code, p]));
+    return rows.map(attendance => {
+      const profile = profiles.get(attendance.code);
+      const overtimePay = attendance.overtimeHours * profile.overtimeRate;
+      const gross = profile.base + overtimePay + profile.transport;
+      const net = gross - profile.deduction;
+      return { code: profile.code, name: profile.name, base: profile.base, overtimePay, transport: profile.transport, gross, deduction: profile.deduction, net, delta: net - profile.previousNet };
+    });
+  }
+  const payrollPause = () => new Promise(resolve => setTimeout(resolve, 320));
+  async function runPayrollAutomation() {
+    if (payrollState.status === 'running') return;
+    const serial = ++payrollRunSerial;
+    payrollState.phase = 0;
+    payrollState.status = 'running';
+    payrollState.issues = [];
+    payrollState.rows = [];
+    payrollState.totals = null;
+    payrollState.prepared = false;
+    const resource = portalResources.find(r => r.id === 'RES-P01');
+    resource.ready = false;
+    resource.published = false;
+    cases.find(c => c.id === 'PAY-211').stage = 0;
     renderAll();
-    announce('確認事項を解消しました（模擬）。');
+    const rows = payrollAttendance();
+    payrollState.phase = 1;
+    log('給与：2026年11月の架空勤怠' + rows.length + '行を読み込み。');
+    renderAll();
+    await payrollPause();
+    if (serial !== payrollRunSerial) return;
+    payrollState.issues = validatePayrollInput(rows);
+    payrollState.phase = 2;
+    log('給与：社員コード・重複・勤務日数・残業時間を自動検証。');
+    if (payrollState.issues.length) {
+      payrollState.status = 'blocked';
+      log('給与：' + payrollState.issues.length + '件の入力不備を検出。給与計算を保留。');
+      renderAll();
+      announce('入力不備を検出しました。計算せずに確認待ちにしています。');
+      return;
+    }
+    renderAll();
+    await payrollPause();
+    if (serial !== payrollRunSerial) return;
+    payrollState.rows = calculatePayroll(rows);
+    payrollState.totals = payrollState.rows.reduce((total, row) => {
+      total.gross += row.gross;
+      total.deduction += row.deduction;
+      total.net += row.net;
+      total.delta += row.delta;
+      return total;
+    }, { gross: 0, deduction: 0, net: 0, delta: 0 });
+    payrollState.phase = 3;
+    log('給与：基本給＋時間外手当＋通勤手当−架空控除額で3名分を自動計算。');
+    renderAll();
+    await payrollPause();
+    if (serial !== payrollRunSerial) return;
+    const largeChanges = payrollState.rows.filter(row => Math.abs(row.delta) >= 10000);
+    payrollState.phase = 4;
+    log('給与：前月との差を自動照合。差額1万円以上の要確認は' + largeChanges.length + '件。');
+    if (largeChanges.length) {
+      payrollState.issues = largeChanges.map(row => row.name + '：前月との差 ' + signedYen(row.delta) + ' を確認してください。');
+      payrollState.status = 'blocked';
+      renderAll();
+      announce('差額の確認が必要なため、共有準備を保留しました。');
+      return;
+    }
+    renderAll();
+    await payrollPause();
+    if (serial !== payrollRunSerial) return;
+    payrollState.phase = 5;
+    payrollState.status = 'ready';
+    payrollState.prepared = true;
+    resource.ready = true;
+    const payrollCase = cases.find(c => c.id === 'PAY-211');
+    payrollCase.stage = Math.max(payrollCase.stage, 3);
+    log('給与：差引支給合計' + yen(payrollState.totals.net) + '。ABC社の公開承認待ちへ追加。');
+    renderAll();
+    announce('架空の給与計算が完了しました。資料の公開は職員承認待ちです。');
   }
   function downloadPayrollCsv() {
-    if (!payrollState.prechecked || !payrollState.issues.every(Boolean) || payrollState.csv) return;
-    const rows = [
-      ['社員コード', '氏名', '対象月', '出勤日数', '労働時間'],
-      ['001', '山田 太郎', '2026-11', '20', '160'],
-      ['002', '佐藤 花子', '2026-11', '19', '152'],
-      ['003', '高橋 健', '2026-11', '21', '168']
+    if (payrollState.status !== 'ready') return;
+    const records = [
+      ['社員コード', '氏名', '基本給', '時間外手当', '通勤手当', '総支給額', '控除設定額', '差引支給額', '前月比'],
+      ...payrollState.rows.map(r => [r.code, r.name, r.base, r.overtimePay, r.transport, r.gross, r.deduction, r.net, r.delta])
     ];
-    const csv = '\uFEFF' + rows.map(row => row.join(',')).join('\r\n') + '\r\n';
+    const csv = '\uFEFF' + records.map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\r\n') + '\r\n';
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'sample-attendance-2026-11.csv';
+    link.download = 'sample-payroll-2026-11.csv';
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    payrollState.csv = true;
-    log('給与：架空の確認用CSVを出力。製品の直接取込形式ではありません。');
-    renderAll();
-    announce('架空データの確認用CSVを出力しました。');
-  }
-  function runReconcile() {
-    if (!payrollState.csv || payrollState.reconciled) return;
-    payrollState.reconciled = true;
-    log('給与：計算後の架空データを照合。手当差額8,000円を要確認へ。');
-    renderAll();
-    announce('差額8,000円が見つかりました。職員の確認が必要です。');
-  }
-  function approveDifference() {
-    if (!payrollState.reconciled || payrollState.differenceChecked) return;
-    payrollState.differenceChecked = true;
-    log('給与：担当職員が架空の手当差額8,000円を確認済みに変更。');
-    renderAll();
-    announce('差分を確認済みにしました（模擬）。');
-  }
-  function preparePayrollShare() {
-    if (!payrollState.differenceChecked || payrollState.prepared) return;
-    payrollState.prepared = true;
-    portalResources.find(r => r.id === 'RES-P01').ready = true;
-    log('給与：資料を株式会社ABCの公開承認待ちに追加。');
-    renderAll();
-    announce('顧問先ポータルの公開承認待ちに追加しました。');
+    log('給与：計算済みの架空結果を汎用CSVで出力。弥生取込形式ではありません。');
+    renderLogs();
+    announce('架空の給与計算結果CSVを出力しました。');
   }
   function renderPayroll() {
-    payrollDone[0] = payrollState.received;
-    payrollDone[1] = payrollState.prechecked && payrollState.issues.every(Boolean);
-    payrollDone[2] = payrollState.csv && payrollState.reconciled && payrollState.differenceChecked;
-    payrollDone[3] = payrollState.prepared;
-    const completed = payrollDone.filter(Boolean).length;
-    $('payroll-progress').textContent = completed + ' / 4 完了';
-    $('payroll-next').textContent = completed === 4 ? '公開承認を待つ' : payrollLabels[completed][0];
-    const list = $('payroll-steps');
-    list.replaceChildren();
-    payrollLabels.forEach((item, index) => {
-      const row = element('div', 'check-row' + (payrollDone[index] ? ' is-done' : ''));
-      if (index === 0 && !payrollState.received) {
-        const button = element('button', 'attendance-action', '受領を確認');
-        button.id = 'confirm-attendance';
-        button.type = 'button';
-        button.setAttribute('aria-label', '勤怠データの受領を確認');
-        button.addEventListener('click', () => {
-          payrollState.received = true;
-          log('給与：11月勤怠データの受領元と対象月を確認。');
-          renderAll();
-          announce('勤怠データの受領を確認しました。');
-        });
-        row.append(button);
-      } else row.append(element('span', 'step-icon', payrollDone[index] ? '✓' : ''));
-      const copy = element('div');
-      copy.append(element('strong', '', item[0]), element('small', '', item[1]));
-      row.append(copy, element('span', 'step-number', '0' + (index + 1)));
-      list.append(row);
+    const select = $('payroll-scenario');
+    select.value = payrollState.scenario;
+    select.disabled = payrollState.status === 'running';
+    const runButton = $('run-payroll');
+    runButton.disabled = payrollState.status === 'running';
+    runButton.textContent = payrollState.status === 'running' ? '自動処理中…' : payrollState.status === 'idle' ? '給与計算を自動実行 →' : 'このデータで再実行 →';
+    $('payroll-progress').textContent = payrollState.phase + ' / 5 工程';
+    const statusLabels = { idle: '実行待ち', running: '自動処理中', blocked: '要確認で停止', ready: '計算完了・公開承認待ち' };
+    $('payroll-next').textContent = statusLabels[payrollState.status];
+    const pipeline = $('payroll-pipeline');
+    pipeline.replaceChildren();
+    payrollLabels.forEach((label, index) => {
+      const step = element('div', 'payroll-pipeline-step' + (payrollState.phase > index ? ' is-done' : payrollState.status === 'running' && payrollState.phase === index ? ' is-active' : ''));
+      step.append(element('span', 'payroll-pipeline-num', payrollState.phase > index ? '✓' : String(index + 1).padStart(2, '0')), element('strong', '', label), element('small', '', payrollState.phase > index ? '自動処理済み' : payrollState.status === 'running' && payrollState.phase === index ? '処理中' : '待機'));
+      pipeline.append(step);
     });
-    $('run-precheck').disabled = !payrollState.received || payrollState.prechecked;
-    $('download-payroll-csv').disabled = !payrollDone[1] || payrollState.csv;
-    $('run-reconcile').disabled = !payrollState.csv || payrollState.reconciled;
-    $('prepare-payroll-share').disabled = !payrollState.differenceChecked || payrollState.prepared;
-    const pre = $('precheck-results');
-    pre.replaceChildren();
-    if (!payrollState.prechecked) pre.append(element('p', 'queue-empty', payrollState.received ? '事前チェックを実行して、確認事項を表示してください。' : '勤怠受領を確認した後、事前チェックを実行できます。'));
-    else {
-      const issues = [
-        ['社員コードの欠落', '架空の3行目。名寄せ前に本人と社員コードを確認します。'],
-        ['同じ勤怠行の重複', '同一社員・対象月の行が2件。二重計上を防ぎます。']
-      ];
-      issues.forEach((issue, i) => {
-        const row = element('div', 'result-row' + (payrollState.issues[i] ? ' is-done' : ''));
-        const copy = element('div');
-        copy.append(element('strong', '', issue[0]), element('small', '', issue[1]));
-        row.append(copy);
-        if (payrollState.issues[i]) row.append(element('span', 'badge ok', '職員確認済み'));
-        else {
-          const button = element('button', 'outline', '確認して修正');
-          button.type = 'button';
-          button.addEventListener('click', () => resolvePayrollIssue(i));
-          row.append(button);
-        }
-        pre.append(row);
-      });
+    const input = $('payroll-input-rows');
+    input.replaceChildren();
+    const profiles = new Map(payrollProfiles.map(p => [p.code, p]));
+    for (const row of payrollAttendance()) {
+      const p = profiles.get(row.code);
+      const tr = element('tr');
+      for (const value of [p ? p.name + '（' + p.code + '）' : '社員コードなし', row.days + '日', row.overtimeHours + '時間', p ? yen(p.base) : '—', p ? yen(p.overtimeRate) : '—', p ? yen(p.transport) : '—', p ? yen(p.deduction) : '—']) tr.append(element('td', '', value));
+      input.append(tr);
     }
-    const post = $('reconcile-results');
-    post.replaceChildren();
-    if (!payrollState.reconciled) post.append(element('p', 'queue-empty', '確認用CSVを出力した後、計算後の架空データを照合できます。'));
-    else {
-      const row = element('div', 'result-row' + (payrollState.differenceChecked ? ' is-done' : ''));
-      const copy = element('div');
-      copy.append(element('strong', '', '前月比：手当 +8,000円'), element('small', '', '変動理由と根拠を職員が確認。自動で給与額を確定しません。'));
-      row.append(copy);
-      if (payrollState.differenceChecked) row.append(element('span', 'badge ok', '職員確認済み'));
-      else {
-        const button = element('button', 'outline', '差分を確認済みにする');
-        button.type = 'button';
-        button.addEventListener('click', approveDifference);
-        row.append(button);
-      }
-      post.append(row);
+    const issues = $('payroll-issues');
+    issues.hidden = payrollState.issues.length === 0;
+    const issueList = $('payroll-issue-list');
+    issueList.replaceChildren();
+    for (const issue of payrollState.issues) issueList.append(element('li', '', issue));
+    const results = $('payroll-results');
+    results.hidden = payrollState.rows.length === 0;
+    $('payroll-result-status').textContent = payrollState.status === 'ready' ? '職員の公開承認待ち' : payrollState.status === 'blocked' ? '差額確認待ち' : '自動処理中';
+    $('download-payroll-csv').disabled = payrollState.status !== 'ready';
+    const resultRows = $('payroll-result-rows');
+    resultRows.replaceChildren();
+    for (const row of payrollState.rows) {
+      const tr = element('tr');
+      for (const value of [row.name, yen(row.base), yen(row.overtimePay), yen(row.transport), yen(row.gross), yen(row.deduction), yen(row.net), signedYen(row.delta)]) tr.append(element('td', '', value));
+      resultRows.append(tr);
     }
+    const totals = payrollState.totals;
+    $('payroll-gross').textContent = totals ? yen(totals.gross) : '—';
+    $('payroll-deductions').textContent = totals ? yen(totals.deduction) : '—';
+    $('payroll-net').textContent = totals ? yen(totals.net) : '—';
+    $('payroll-variance').textContent = totals ? signedYen(totals.delta) : '—';
   }
   function caseCanComplete(c) {
     if (c.type === 'payroll') return portalResources.some(r => r.id === 'RES-P01' && r.published);
@@ -579,12 +628,12 @@
     portal: { number: '①', title: '顧問先との安全な資料共有', source: '架空の就業規則PDF', operation: '職員が公開を承認し、顧問先表示に切り替える', outcome: '公開済みの資料だけが顧問先画面に表示される', boundary: '画面上の役割切替です。本番の認証・アクセス権ではありません。' },
     documents: { number: '②', title: '電子申請後の公文書処理', source: '電子申請後に届いた想定の架空PDF4件', operation: '取得 → 事業所番号で照合 → 職員が公開承認', outcome: '対象顧問先に表示。重複・不明書類は保留', boundary: '実際の電子申請サイトからの取得やSharePoint保存は行いません。' },
     mail: { number: '③', title: 'Outlookメール・添付整理', source: '架空の受信メール4件と添付', operation: '送信元と拡張子で分類し、保存先候補を決める', outcome: '2件を保存候補、1件を要確認、1件を隔離', boundary: 'Outlookに接続せず、実メールや添付を読み込みません。' },
-    payroll: { number: '④', title: '弥生給与の前後作業', source: '架空の勤怠3行と計算後を想定した金額', operation: '事前照合 → 確認用CSV → 差額確認 → 公開準備', outcome: '確認事項を残したまま確定せず、職員確認後に共有へ', boundary: '給与計算は行いません。CSVは弥生への直接取込形式ではありません。' },
+    payroll: { number: '④', title: '給与計算を一括で自動実行', source: '架空の勤怠3行・基本給・残業単価・通勤手当・控除設定額', operation: '入力検証 → 簡易給与計算 → 前月比較 → 共有準備', outcome: '3名分の総支給・控除・差引支給を算出し、職員の公開承認待ちにする', boundary: '法定税・社会保険料の算定や弥生製品への取込は行いません。' },
     cases: { number: '⑤', title: '手続・給与の進捗管理', source: '架空の手続2件・給与1件', operation: '担当・期限・工程を確認し、状態を更新する', outcome: '次の担当作業と公開前の進行制限を確認できる', boundary: '更新はブラウザ内のみで、複数人の台帳には保存しません。' }
   };
   function guideStage(id) {
     const next = { portal: 'documents', documents: 'mail', mail: 'payroll', payroll: 'cases', cases: 'overview' };
-    const nextLabel = { portal: '② 公文書の取得・仕分けへ', documents: '③ Outlookメール整理へ', mail: '④ 弥生給与の前後作業へ', payroll: '⑤ 進捗管理へ', cases: '全体像に戻る' };
+    const nextLabel = { portal: '② 公文書の取得・仕分けへ', documents: '③ Outlookメール整理へ', mail: '④ 給与計算の自動化へ', payroll: '⑤ 進捗管理へ', cases: '全体像に戻る' };
     function complete(effect) { return { done: true, step: 0, total: 0, action: nextLabel[id], effect, run: () => navigate(next[id]) }; }
     if (id === 'portal') {
       const rule = portalResources.find(r => r.id === 'RES-R01');
@@ -607,15 +656,10 @@
       return { step: 1, total: 1, action: '架空メール4件を整理する', effect: '既知の送信元2件は保存先候補へ、不明な1件は要確認、ZIP添付1件は隔離になります。', run: runMail };
     }
     if (id === 'payroll') {
-      if (payrollState.prepared) return complete('架空の勤怠を照合し、差額を確認して給与資料を公開承認待ちにしました。');
-      if (!payrollState.received) return { step: 1, total: 8, action: '11月分の勤怠受領を確認する', effect: '対象月と受領元を確認した想定で、事前チェックが押せるようになります。', run: () => $('confirm-attendance').click() };
-      if (!payrollState.prechecked) return { step: 2, total: 8, action: '勤怠の事前チェックを実行する', effect: '社員コードの欠落と重複行の2件を検出します。', run: runPrecheck };
-      if (!payrollState.issues[0]) return { step: 3, total: 8, action: '社員コード欠落を確認済みにする', effect: '1件目の確認事項を職員が確認した想定にします。', run: () => resolvePayrollIssue(0) };
-      if (!payrollState.issues[1]) return { step: 4, total: 8, action: '勤怠の重複行を確認済みにする', effect: '二重計上を避ける確認を行った想定にします。', run: () => resolvePayrollIssue(1) };
-      if (!payrollState.csv) return { step: 5, total: 8, action: '説明用のCSVをダウンロードする', effect: '架空の3名分の汎用CSVがダウンロードされます。弥生への直接取込形式ではありません。', run: downloadPayrollCsv };
-      if (!payrollState.reconciled) return { step: 6, total: 8, action: '計算後の架空データを照合する', effect: '前月比で手当8,000円の差額を表示します。', run: runReconcile };
-      if (!payrollState.differenceChecked) return { step: 7, total: 8, action: '手当の差額を確認済みにする', effect: '職員が変動理由を確認した想定にします。給与額の自動確定ではありません。', run: approveDifference };
-      return { step: 8, total: 8, action: '給与資料を共有準備へ進める', effect: 'ポータルの職員画面に公開承認待ちとして追加します。', run: preparePayrollShare };
+      if (payrollState.prepared) return complete('3名分の支給額・控除額・差引支給額を自動計算し、前月比較と共有準備まで完了しました。');
+      if (payrollState.status === 'running') return { step: Math.min(payrollState.phase + 1, 5), total: 5, action: '自動処理中', effect: '架空の勤怠検証、給与計算、前月比較、共有準備が順番に進みます。', run: null };
+      if (payrollState.status === 'blocked') return { step: 1, total: 1, action: '通常データに切り替えて再実行する', effect: '不備データの確認事項を残して計算を止めました。通常データを使い、今度は自動で最後まで進めます。', run: () => { payrollResetState('normal'); runPayrollAutomation(); } };
+      return { step: 1, total: 1, action: '給与計算をまとめて自動実行する', effect: '架空の3名分を検証・計算・前月比較し、給与資料を職員の公開承認待ちにします。', run: runPayrollAutomation };
     }
     if (caseActivity) return complete('案件の工程が更新され、担当・期限・次の操作が一覧で確認できます。');
     return { step: 1, total: 1, action: '雇用保険の手続を次の工程へ進める', effect: '案件の現在工程と次の操作が更新されます。実際の申請や通知は行いません。', run: () => advanceCase('PROC-241') };
@@ -641,7 +685,8 @@
       const button = element('button', 'guide-cta', state.done ? state.action : 'この操作を試す →');
       button.type = 'button';
       button.setAttribute('aria-label', state.action);
-      button.addEventListener('click', state.run);
+      if (state.run) button.addEventListener('click', state.run);
+      else button.disabled = true;
       now.append(copy, button);
       slot.replaceChildren(head, now, flow, element('p', 'guide-boundary', meta.boundary + ' ブラウザを再読み込みするとデモの状態は初期化されます。'));
     }
@@ -651,7 +696,7 @@
       { title: '① 顧問先との資料共有', done: portalViewed, guide: '就業規則を公開承認 → 顧問先表示へ切替 → 資料を確認', view: 'portal' },
       { title: '② 公文書の取得・仕分け', done: docs.some(d => d.shared), guide: '架空の4件を取得 → 仕分け → DOC-01の共有を承認', view: 'documents' },
       { title: '③ Outlookメール・添付整理', done: mails.some(m => m.status !== 'pending'), guide: '4件を分類し、保存候補・要確認・隔離を確認', view: 'mail' },
-      { title: '④ 弥生給与の前後作業', done: payrollState.prepared, guide: '勤怠受領 → 事前照合 → CSV → 差分確認 → 共有準備', view: 'payroll' },
+      { title: '④ 給与計算の自動化', done: payrollState.prepared, guide: '一括実行 → 3名分の給与計算 → 前月比較 → 共有準備', view: 'payroll' },
       { title: '⑤ 手続・給与の進捗管理', done: caseActivity, guide: '案件の工程を更新し、次の担当作業を確認', view: 'cases' }
     ];
     const done = items.filter(item => item.done).length;
@@ -723,11 +768,10 @@
   $('reset-sort').addEventListener('click', resetDocs);
   $('run-mail').addEventListener('click', runMail);
   $('reset-mail').addEventListener('click', resetMail);
-  $('reset-payroll').addEventListener('click', payrollResetState);
-  $('run-precheck').addEventListener('click', runPrecheck);
+  $('reset-payroll').addEventListener('click', () => payrollResetState());
+  $('payroll-scenario').addEventListener('change', e => payrollResetState(e.target.value));
+  $('run-payroll').addEventListener('click', runPayrollAutomation);
   $('download-payroll-csv').addEventListener('click', downloadPayrollCsv);
-  $('run-reconcile').addEventListener('click', runReconcile);
-  $('prepare-payroll-share').addEventListener('click', preparePayrollShare);
   $('case-company').addEventListener('change', renderCases);
   $('case-state').addEventListener('change', renderCases);
   $('jump-to-scope').addEventListener('click', () => $('scope').scrollIntoView({ behavior: 'smooth', block: 'start' }));
