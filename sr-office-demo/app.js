@@ -47,6 +47,53 @@
   let company = 'abc';
   let portalTab = 'public';
   let toastTimer;
+  let activeView = 'overview';
+  let dockDismissed = false;
+  const guideFeedback = { portal: null, documents: null, mail: null, payroll: null, cases: null };
+  function recordGuide(id, action, result) {
+    guideFeedback[id] = { action, result };
+    dockDismissed = false;
+    renderGuides();
+    renderActionDock();
+  }
+  function runGuideAction(id, state) {
+    const previous = guideFeedback[id];
+    if (!state.run) return;
+    state.run();
+    if (!state.done && id !== 'payroll' && guideFeedback[id] === previous) recordGuide(id, state.action, state.effect);
+  }
+  function renderActionDock() {
+    const dock = $('action-dock');
+    const feedback = guideFeedback[activeView];
+    if (!feedback || dockDismissed) { dock.hidden = true; return; }
+    const guide = $('guide-' + activeView);
+    const rect = guide && guide.getBoundingClientRect();
+    if (rect && rect.bottom > 90 && rect.top < window.innerHeight - 90) { dock.hidden = true; return; }
+    const state = guideStage(activeView);
+    const renderKey = [activeView, feedback.action, feedback.result, state.action, state.done, Boolean(state.run)].join('|');
+    if (dock.dataset.renderKey === renderKey) { dock.hidden = false; return; }
+    const head = element('div', 'action-dock-head');
+    head.append(element('span', '', 'いま行ったこと · ' + views[activeView]));
+    const close = element('button', 'action-dock-close', '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', '操作案内を閉じる');
+    close.addEventListener('click', () => { dockDismissed = true; dock.hidden = true; });
+    head.append(close);
+    const next = element('div', 'action-dock-next');
+    next.append(element('span', '', state.done ? '次の画面' : state.run ? '次に押すボタン' : 'いま自動処理中'));
+    const button = element('button', '', state.run ? state.action + ' →' : '自動処理中 · 追加クリック不要');
+    button.type = 'button';
+    button.disabled = !state.run;
+    if (state.run) button.addEventListener('click', () => runGuideAction(activeView, state));
+    next.append(button);
+    const locations = { portal: 'portal-files', documents: 'document-rows', mail: 'mail-rows', payroll: payrollState.status === 'ready' ? 'payroll-results' : 'payroll-pipeline', cases: 'case-rows' };
+    const viewResult = element('button', 'action-dock-view', '画面で変化した場所を見る ↓');
+    viewResult.type = 'button';
+    viewResult.addEventListener('click', () => $(locations[activeView]).scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    dock.replaceChildren(head, element('strong', '', feedback.action), element('p', '', feedback.result), viewResult, next);
+    dock.dataset.renderKey = renderKey;
+    dock.hidden = false;
+  }
   function element(tag, className, text) {
     const n = document.createElement(tag);
     if (className) n.className = className;
@@ -155,6 +202,7 @@
         log(d.id + '：職員の確認で' + d.destination + 'へ模擬保存。公開は保留。');
         renderAll();
         announce('職員確認で割り当てました。顧問先への公開は別途承認が必要です。');
+        recordGuide('documents', 'DOC-03の割当先を確認', d.name + 'を' + companies[d.company].name + 'の模擬保存先へ移しました。職員の公開承認までは顧問先へ表示しません。');
       });
       card.append(select, button);
       queue.append(card);
@@ -170,6 +218,7 @@
     }
     renderAll();
     announce(count ? count + '件を取得済みにしました（模擬）。' : '新しい取得対象はありません。');
+    recordGuide('documents', '公文書を一括取得（模擬）', count ? '架空PDF' + count + '件を受信済みから取得済みに変更しました。実際の電子申請サイトには接続していません。次に事業所番号で仕分けます。' : '未処理の公文書はありません。既存の結果を維持しました。');
   }
   function runSort() {
     if (docs.some(d => d.status === 'received')) {
@@ -203,6 +252,7 @@
       announce('顧問先別の模擬保存を行いました。要確認と公開承認待ちを確認してください。');
     }
     renderAll();
+    recordGuide('documents', '仕分けを実行', count ? 'DOC-01とDOC-02を顧問先別の模擬保存先へ、DOC-03を要確認へ、DOC-04を重複保留へ振り分けました。自動公開はしていません。' : '未処理の公文書がないため結果を変更していません。');
   }
   function shareDocument(id) {
     const d = docs.find(x => x.id === id);
@@ -213,6 +263,7 @@
     log(d.id + '：職員が公開を承認。' + companies[d.company].name + 'のポータルに表示。');
     renderAll();
     announce(companies[d.company].name + 'へ共有しました（画面上の模擬処理）。');
+    recordGuide('documents', d.id + '行の「共有を承認」', d.name + 'を' + companies[d.company].name + 'の公開済み一覧へ追加しました。重複・所属不明の文書は公開していません。');
   }
   function resetDocs() {
     docs.splice(0, docs.length, ...originalDocs.map(d => ({ ...d, status: 'received', company: null, shared: false })));
@@ -221,6 +272,7 @@
     log('文書処理を初期化。サンプル4件を受信済みに戻しました。');
     renderAll();
     announce('文書処理を初期化しました。');
+    recordGuide('documents', '文書処理を初期化', '架空の公文書4件を受信済みに戻しました。先頭からデモをやり直せます。');
   }
   function releaseResource(id) {
     const r = portalResources.find(x => x.id === id);
@@ -230,6 +282,7 @@
     log(r.id + '：職員が公開を承認。' + companies[r.company].name + 'へ共有。');
     renderAll();
     announce('資料を顧問先へ公開しました（画面上の模擬処理）。');
+    recordGuide('portal', r.name + 'の「公開を承認」', companies[r.company].name + '向けの架空資料を公開済みに変更しました。次は顧問先担当者の表示へ切り替え、該当タブで確認します。');
   }
   function renderPortal() {
     if (role === 'client' && portalTab === 'rules' && portalResources.some(r => r.id === 'RES-R01' && r.published)) portalViewed = true;
@@ -335,6 +388,7 @@
           log('メール' + m.id + '：職員が' + m.destination + 'へ模擬保存。');
           renderAll();
           announce('顧問先別の保存候補に割り当てました（模擬）。');
+          recordGuide('mail', 'MAIL-03の顧問先を確認して割り当て', m.subject + 'を' + companies[m.company].name + 'の模擬保存先へ移しました。ZIP添付は引き続き隔離しています。');
         });
         card.append(select, button);
       }
@@ -360,12 +414,14 @@
     }
     renderAll();
     announce(count ? 'メールを整理しました。要確認と隔離も確認してください。' : '未整理のメールはありません。');
+    recordGuide('mail', '整理ルールを実行', count ? '架空メール4件を判定しました。2件は顧問先別の模擬保存先、送信元不明1件は要確認、ZIP添付1件は隔離です。実メールは読み込んでいません。' : '未整理のメールはありません。既存の判定結果を維持しました。');
   }
   function resetMail() {
     mails.splice(0, mails.length, ...originalMails.map(m => ({ ...m, status: 'pending', destination: '' })));
     log('メール処理を初期化しました。');
     renderAll();
     announce('メール処理を初期化しました。');
+    recordGuide('mail', '初期化', '架空メール4件を未整理へ戻しました。整理ルールを再実行できます。');
   }
   const payrollProfiles = [
     { code: '001', name: '山田 太郎', base: 280000, overtimeRate: 2200, transport: 12000, deduction: 57000, previousNet: 245200 },
@@ -404,6 +460,7 @@
     cases.find(c => c.id === 'PAY-211').stage = 0;
     log('給与：説明用の計算状態を初期化。');
     renderAll();
+    recordGuide('payroll', '使う架空データを選択', scenario === 'exception' ? '重複した社員コードと社員コード欠落を含むデータに切り替えました。次の実行では検証で停止します。' : '通常の架空勤怠3行に戻しました。次は「給与計算を自動実行」を押します。');
   }
   function validatePayrollInput(rows) {
     const issues = [];
@@ -433,7 +490,7 @@
       return { code: profile.code, name: profile.name, base: profile.base, overtimePay, transport: profile.transport, gross, deduction: profile.deduction, net, delta: net - profile.previousNet };
     });
   }
-  const payrollPause = () => new Promise(resolve => setTimeout(resolve, 320));
+  const payrollPause = () => new Promise(resolve => setTimeout(resolve, 800));
   async function runPayrollAutomation() {
     if (payrollState.status === 'running') return;
     const serial = ++payrollRunSerial;
@@ -448,10 +505,12 @@
     resource.published = false;
     cases.find(c => c.id === 'PAY-211').stage = 0;
     renderAll();
+    recordGuide('payroll', '給与計算を自動実行', '自動処理を開始しました。追加クリックは不要です。勤怠取得、入力検証、計算、前月照合、共有準備の順に進みます。');
     const rows = payrollAttendance();
     payrollState.phase = 1;
     log('給与：2026年11月の架空勤怠' + rows.length + '行を読み込み。');
     renderAll();
+    recordGuide('payroll', '自動工程1/5：勤怠取得', '2026年11月の架空勤怠' + rows.length + '行を読み込みました。次に社員コード、勤務日数、残業時間を自動検証します。');
     await payrollPause();
     if (serial !== payrollRunSerial) return;
     payrollState.issues = validatePayrollInput(rows);
@@ -461,10 +520,12 @@
       payrollState.status = 'blocked';
       log('給与：' + payrollState.issues.length + '件の入力不備を検出。給与計算を保留。');
       renderAll();
+      recordGuide('payroll', '自動工程2/5：入力検証', payrollState.issues.join(' ') + ' 給与額は計算せず、ここで停止しました。通常データに切り替えて再実行できます。');
       announce('入力不備を検出しました。計算せずに確認待ちにしています。');
       return;
     }
     renderAll();
+    recordGuide('payroll', '自動工程2/5：入力検証', '3名の社員コード、重複、勤務日数、残業時間に不備はありません。次に基本給・時間外手当・通勤手当・架空控除額を使って計算します。');
     await payrollPause();
     if (serial !== payrollRunSerial) return;
     payrollState.rows = calculatePayroll(rows);
@@ -478,6 +539,7 @@
     payrollState.phase = 3;
     log('給与：基本給＋時間外手当＋通勤手当−架空控除額で3名分を自動計算。');
     renderAll();
+    recordGuide('payroll', '自動工程3/5：給与計算', '残業時間×残業単価で時間外手当を出し、基本給と通勤手当を足して総支給' + yen(payrollState.totals.gross) + '、架空控除' + yen(payrollState.totals.deduction) + 'を引いて差引支給' + yen(payrollState.totals.net) + 'を計算しました。次に前月差を確認します。');
     await payrollPause();
     if (serial !== payrollRunSerial) return;
     const largeChanges = payrollState.rows.filter(row => Math.abs(row.delta) >= 10000);
@@ -487,10 +549,12 @@
       payrollState.issues = largeChanges.map(row => row.name + '：前月との差 ' + signedYen(row.delta) + ' を確認してください。');
       payrollState.status = 'blocked';
       renderAll();
+      recordGuide('payroll', '自動工程4/5：前月照合', payrollState.issues.join(' ') + ' 差額の確認が必要なため、共有準備を停止しました。');
       announce('差額の確認が必要なため、共有準備を保留しました。');
       return;
     }
     renderAll();
+    recordGuide('payroll', '自動工程4/5：前月照合', '3名の差引支給額を前月と比較しました。個人ごとの変動が1万円以上の人は0名です。次に給与資料を職員の公開承認待ちへ追加します。');
     await payrollPause();
     if (serial !== payrollRunSerial) return;
     payrollState.phase = 5;
@@ -502,6 +566,7 @@
     log('給与：差引支給合計' + yen(payrollState.totals.net) + '。ABC社の公開承認待ちへ追加。');
     renderAll();
     announce('架空の給与計算が完了しました。資料の公開は職員承認待ちです。');
+    recordGuide('payroll', '自動工程5/5：共有準備', '差引支給の合計は' + yen(payrollState.totals.net) + 'です。ABC社の給与資料を職員の公開承認待ちにしました。顧問先への自動公開はしていません。下の計算結果で3名の内訳を確認できます。');
   }
   function downloadPayrollCsv() {
     if (payrollState.status !== 'ready') return;
@@ -521,6 +586,7 @@
     log('給与：計算済みの架空結果を汎用CSVで出力。弥生取込形式ではありません。');
     renderLogs();
     announce('架空の給与計算結果CSVを出力しました。');
+    recordGuide('payroll', '計算結果CSVを出力', '3名分の計算結果を汎用CSVとしてダウンロードしました。弥生製品の取込形式ではありません。');
   }
   function renderPayroll() {
     const select = $('payroll-scenario');
@@ -534,9 +600,18 @@
     $('payroll-next').textContent = statusLabels[payrollState.status];
     const pipeline = $('payroll-pipeline');
     pipeline.replaceChildren();
+    const phaseResults = [
+      payrollAttendance().length + '行の勤怠を読み込み',
+      payrollState.issues.length && payrollState.phase === 2 ? payrollState.issues.length + '件の不備で停止' : '社員コード・日数・残業時間を確認',
+      payrollState.totals ? '差引支給合計 ' + yen(payrollState.totals.net) : '3名の給与を計算',
+      payrollState.issues.length && payrollState.phase === 4 ? '前月差の確認待ち' : '1万円以上の変動 0名',
+      'ABC社資料を職員の公開承認待ちへ'
+    ];
     payrollLabels.forEach((label, index) => {
-      const step = element('div', 'payroll-pipeline-step' + (payrollState.phase > index ? ' is-done' : payrollState.status === 'running' && payrollState.phase === index ? ' is-active' : ''));
-      step.append(element('span', 'payroll-pipeline-num', payrollState.phase > index ? '✓' : String(index + 1).padStart(2, '0')), element('strong', '', label), element('small', '', payrollState.phase > index ? '自動処理済み' : payrollState.status === 'running' && payrollState.phase === index ? '処理中' : '待機'));
+      const done = payrollState.phase > index;
+      const step = element('div', 'payroll-pipeline-step' + (done ? ' is-done' : payrollState.status === 'running' && payrollState.phase === index ? ' is-active' : ''));
+      const detail = done ? phaseResults[index] : payrollState.status === 'running' && payrollState.phase === index ? '処理中 · 追加クリック不要' : '待機';
+      step.append(element('span', 'payroll-pipeline-num', done ? '✓' : String(index + 1).padStart(2, '0')), element('strong', '', label), element('small', '', detail));
       pipeline.append(step);
     });
     const input = $('payroll-input-rows');
@@ -579,6 +654,7 @@
     if (!c || c.stage >= c.steps.length - 1) return;
     if (c.stage >= c.steps.length - 3 && !caseCanComplete(c)) {
       announce('関連する資料が顧問先に公開されるまで完了にできません。');
+      recordGuide('cases', c.id + 'の次の工程', '関連する公文書または給与資料がまだ職員承認されていないため、工程は進めていません。①の公開待ちで承認した後に再試行します。');
       return;
     }
     c.stage++;
@@ -586,6 +662,7 @@
     log('案件' + c.id + '：' + c.steps[c.stage] + 'へ更新。担当 ' + c.owner + '。');
     renderAll();
     announce(c.title + 'を「' + c.steps[c.stage] + '」に更新しました。');
+    recordGuide('cases', c.id + '行の「次へ：' + c.steps[c.stage] + '」', c.title + 'の工程を「' + c.steps[c.stage] + '」に変更しました。担当は' + c.owner + '、期限は2026/' + c.due + 'です。実際の申請や通知はしていません。');
   }
   function renderCases() {
     const active = cases.filter(c => c.stage < c.steps.length - 1);
@@ -642,27 +719,47 @@
       if (role !== 'staff' && !rule.published) return { step: 1, total: 3, action: '事務所職員の表示に切り替える', effect: '公開承認できる職員画面に戻ります。', run: () => { role = 'staff'; renderAll(); } };
       if (!rule.published) return { step: 1, total: 3, action: '就業規則の公開を承認する', effect: '株式会社ABC向けの架空資料が「公開済み」になります。実ファイルは配信しません。', run: () => releaseResource('RES-R01') };
       if (role !== 'client') return { step: 2, total: 3, action: '顧問先担当者の表示に切り替える', effect: '職員専用の公開待ち一覧が隠れ、ABC社の公開済み資料だけを表示する役割になります。', run: () => { role = 'client'; renderAll(); } };
-      return { step: 3, total: 3, action: '就業規則タブを開いて確認する', effect: '先ほど公開したABC社向けの資料カードが見えます。', run: () => document.querySelector('[data-doc-tab="rules"]').click() };
+      return { step: 3, total: 3, action: '就業規則タブを開いて確認する', effect: '先ほど公開したABC社向けの資料カードが見えます。', run: () => {
+        portalTab = 'rules';
+        document.querySelectorAll('[data-doc-tab]').forEach(tab => {
+          const active = tab.dataset.docTab === 'rules';
+          tab.classList.toggle('is-active', active);
+          tab.setAttribute('aria-selected', String(active));
+        });
+        renderAll();
+        recordGuide('portal', '就業規則タブを開く', 'ABC社向けの公開済み就業規則を表示しました。職員の公開承認前には顧問先画面へ表示されません。');
+      } };
     }
     if (id === 'documents') {
       const target = docs.find(d => d.id === 'DOC-01');
       if (target.shared) return complete('DOC-01をABC社に公開。重複と顧問先不明の文書は自動公開されません。');
-      if (docs.some(d => d.status === 'received')) return { step: 1, total: 3, action: '架空の公文書4件を取得する', effect: '4件の表示が「取得済み」に変わります。実際のダウンロードは行いません。', run: runDownload };
-      if (docs.some(d => d.status === 'downloaded')) return { step: 2, total: 3, action: '事業所番号で仕分ける', effect: '2件は顧問先別の模擬保存、1件は不明で要確認、1件は重複保留になります。', run: runSort };
-      return { step: 3, total: 3, action: 'DOC-01の共有を承認する', effect: '職員の承認後、ABC社のポータルへ公開済みとして表示されます。', run: () => shareDocument('DOC-01') };
+      if (docs.some(d => d.status === 'received')) return { step: 1, total: 3, action: '公文書を一括取得（模擬）', effect: '4件の表示が「取得済み」に変わります。実際のダウンロードは行いません。', run: runDownload };
+      if (docs.some(d => d.status === 'downloaded')) return { step: 2, total: 3, action: '仕分けを実行', effect: '2件は顧問先別の模擬保存、1件は不明で要確認、1件は重複保留になります。', run: runSort };
+      return { step: 3, total: 3, action: 'DOC-01行の「共有を承認」', effect: '職員の承認後、ABC社のポータルへ公開済みとして表示されます。', run: () => shareDocument('DOC-01') };
     }
     if (id === 'mail') {
       if (mails.some(m => m.status !== 'pending')) return complete('分類結果は保存候補2件、要確認1件、隔離1件。実メールは処理していません。');
-      return { step: 1, total: 1, action: '架空メール4件を整理する', effect: '既知の送信元2件は保存先候補へ、不明な1件は要確認、ZIP添付1件は隔離になります。', run: runMail };
+      return { step: 1, total: 1, action: '整理ルールを実行', effect: '既知の送信元2件は保存先候補へ、不明な1件は要確認、ZIP添付1件は隔離になります。', run: runMail };
     }
     if (id === 'payroll') {
       if (payrollState.prepared) return complete('3名分の支給額・控除額・差引支給額を自動計算し、前月比較と共有準備まで完了しました。');
-      if (payrollState.status === 'running') return { step: Math.min(payrollState.phase + 1, 5), total: 5, action: '自動処理中', effect: '架空の勤怠検証、給与計算、前月比較、共有準備が順番に進みます。', run: null };
+      if (payrollState.status === 'running') {
+        const running = [
+          ['勤怠データを読み込み中', '架空の11月勤怠3行を取り込みます。'],
+          ['社員コードと勤怠を自動検証中', '社員コードの欠落・重複、勤務日数、残業時間を確認します。'],
+          ['3名分の給与を自動計算中', '基本給・時間外手当・通勤手当から総支給を求め、架空の控除額を引きます。'],
+          ['前月との差額を自動照合中', '差引支給額の前月差が1万円以上なら共有準備を止めます。'],
+          ['給与資料の共有準備中', '計算結果を職員の公開承認待ちにします。顧問先へは自動公開しません。']
+        ];
+        const phase = Math.min(payrollState.phase, 4);
+        return { step: phase + 1, total: 5, action: running[phase][0], effect: running[phase][1], run: null };
+      }
       if (payrollState.status === 'blocked') return { step: 1, total: 1, action: '通常データに切り替えて再実行する', effect: '不備データの確認事項を残して計算を止めました。通常データを使い、今度は自動で最後まで進めます。', run: () => { payrollResetState('normal'); runPayrollAutomation(); } };
-      return { step: 1, total: 1, action: '給与計算をまとめて自動実行する', effect: '架空の3名分を検証・計算・前月比較し、給与資料を職員の公開承認待ちにします。', run: runPayrollAutomation };
+      return { step: 1, total: 1, action: '給与計算を自動実行', effect: '架空の3名分を検証・計算・前月比較し、給与資料を職員の公開承認待ちにします。', run: runPayrollAutomation };
     }
     if (caseActivity) return complete('案件の工程が更新され、担当・期限・次の操作が一覧で確認できます。');
-    return { step: 1, total: 1, action: '雇用保険の手続を次の工程へ進める', effect: '案件の現在工程と次の操作が更新されます。実際の申請や通知は行いません。', run: () => advanceCase('PROC-241') };
+    const caseToAdvance = cases.find(c => c.id === 'PROC-241');
+    return { step: 1, total: 1, action: 'PROC-241行の「次へ：' + caseToAdvance.steps[caseToAdvance.stage + 1] + '」', effect: '案件の現在工程と次の操作が更新されます。実際の申請や通知は行いません。', run: () => advanceCase('PROC-241') };
   }
   function renderGuides() {
     for (const id of ['portal', 'documents', 'mail', 'payroll', 'cases']) {
@@ -671,7 +768,7 @@
       const slot = $('guide-' + id);
       const head = element('div', 'guide-head');
       const title = element('div');
-      title.append(element('span', 'guide-kicker', 'DEMO ' + meta.number + ' / ⑤  ·  架空データ'), element('h2', '', meta.title), element('p', '', 'この画面で何をするか、操作の結果まで順番に確認できます。'));
+      title.append(element('span', 'guide-kicker', 'DEMO ' + meta.number + ' / ⑤  ·  架空データ'), element('h2', '', meta.title), element('p', '', '上の白いボタンを順番に押してください。押した結果は下の緑色の欄に残ります。'));
       head.append(title, element('span', 'guide-mode', '外部サービスへの接続なし'));
       const flow = element('div', 'guide-flow');
       for (const [label, value] of [['入力', meta.source], ['この画面で行うこと', meta.operation], ['確認できる結果', meta.outcome]]) {
@@ -681,14 +778,17 @@
       }
       const now = element('div', 'guide-now' + (state.done ? ' is-complete' : ''));
       const copy = element('div');
-      copy.append(element('span', 'guide-step', state.done ? '体験済み · 次のデモへ' : 'いまの操作 ' + state.step + ' / ' + state.total), element('strong', '', state.done ? 'この画面の操作を確認しました' : state.action), element('p', '', state.effect));
-      const button = element('button', 'guide-cta', state.done ? state.action : 'この操作を試す →');
+      copy.append(element('span', 'guide-step', state.done ? 'この画面は完了 · 次の画面へ' : state.run ? '次に押すボタン ' + state.step + ' / ' + state.total : 'いま自動処理中 ' + state.step + ' / ' + state.total), element('strong', '', state.done ? '操作と結果を確認しました' : state.action), element('p', '', state.effect));
+      const button = element('button', 'guide-cta', state.run ? (state.done ? '次へ：' : '押す：') + state.action + ' →' : '自動処理中 · 追加クリック不要');
       button.type = 'button';
       button.setAttribute('aria-label', state.action);
-      if (state.run) button.addEventListener('click', state.run);
+      if (state.run) button.addEventListener('click', () => runGuideAction(id, state));
       else button.disabled = true;
       now.append(copy, button);
-      slot.replaceChildren(head, now, flow, element('p', 'guide-boundary', meta.boundary + ' ブラウザを再読み込みするとデモの状態は初期化されます。'));
+      const feedback = guideFeedback[id];
+      const result = element('div', 'guide-result' + (feedback ? '' : ' is-empty'));
+      result.append(element('span', '', feedback ? '押した結果 · ここに残ります' : '操作前 · まず上のボタンを押してください'), element('strong', '', feedback ? '押した操作：' + feedback.action : '上の白いボタンが、この画面の最初の操作です。'), element('p', '', feedback ? feedback.result : '押すと、実行内容と結果、次に押すボタンをここに表示します。'));
+      slot.replaceChildren(head, now, result, flow, element('p', 'guide-boundary', meta.boundary + ' ブラウザを再読み込みするとデモの状態は初期化されます。'));
     }
   }
   function renderScenario() {
@@ -723,12 +823,14 @@
     renderPayroll();
     renderCases();
     renderGuides();
+    renderActionDock();
     renderScenario();
     updateCounts();
     renderLogs();
   }
   function navigate(id) {
     if (!views[id]) id = 'overview';
+    activeView = id;
     document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== id; });
     document.querySelectorAll('[data-nav]').forEach(n => {
       const active = n.dataset.nav === id && n.classList.contains('nav-item');
@@ -740,6 +842,7 @@
     $('breadcrumb').textContent = views[id];
     if (location.hash !== '#' + id) historyReplace(id);
     window.scrollTo({ top: 0, behavior: 'auto' });
+    renderActionDock();
   }
   function historyReplace(id) {
     window.history.replaceState(null, '', '#' + id);
@@ -759,10 +862,11 @@
         tab.setAttribute('aria-selected', String(active));
       });
       renderAll();
+      recordGuide('portal', button.textContent + 'タブを開く', portalTab === 'rules' ? '公開済みの就業規則が顧問先担当者の画面に表示されます。未公開資料は表示されません。' : '選んだ分類の資料一覧へ切り替えました。公開前の資料は顧問先担当者には表示されません。');
     });
   });
-  $('role-select').addEventListener('change', e => { role = e.target.value; renderAll(); });
-  $('company-select').addEventListener('change', e => { company = e.target.value; renderAll(); });
+  $('role-select').addEventListener('change', e => { role = e.target.value; renderAll(); recordGuide('portal', '表示する役割を変更', role === 'client' ? '顧問先担当者の表示に切り替えました。職員専用の公開待ち一覧を隠し、ABC社の公開済み資料だけを表示します。' : '事務所職員の表示に戻しました。公開待ちの資料を確認できます。'); });
+  $('company-select').addEventListener('change', e => { company = e.target.value; renderAll(); recordGuide('portal', '対象の顧問先を変更', companies[company].name + 'の資料一覧へ切り替えました。'); });
   $('run-download').addEventListener('click', runDownload);
   $('run-sort').addEventListener('click', runSort);
   $('reset-sort').addEventListener('click', resetDocs);
@@ -776,6 +880,8 @@
   $('case-state').addEventListener('change', renderCases);
   $('jump-to-scope').addEventListener('click', () => $('scope').scrollIntoView({ behavior: 'smooth', block: 'start' }));
   window.addEventListener('hashchange', () => navigate(location.hash.slice(1)));
+  window.addEventListener('scroll', renderActionDock, { passive: true });
+  window.addEventListener('resize', renderActionDock);
   log('デモを開始。公文書4件、メール4件、進捗3件の架空データを読み込みました。');
   renderAll();
   navigate(location.hash.slice(1));

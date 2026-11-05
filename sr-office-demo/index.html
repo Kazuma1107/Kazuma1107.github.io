@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#17345d">
   <meta name="description" content="社労士事務所の5業務を画面で試し、実装済みの操作と本番に必要な連携を区別して示す自主制作デモ。">
   <title>社労士事務所OS | SharePoint / SPFx 導入想定デモ</title>
-  <link rel="stylesheet" href="./style.css?v=20261105-payroll">
-  <script src="./app.js?v=20261105-payroll" defer></script>
+  <link rel="stylesheet" href="./style.css?v=20261105-guide">
+  <script src="./app.js?v=20261105-guide" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">本文へ移動</a>
@@ -40,7 +40,7 @@
 
       <section class="view" id="overview" aria-labelledby="overview-title">
         <div class="hero">
-          <div class="hero-copy"><span class="eyebrow">INTERACTIVE CONCEPT / 2026</span><h1 id="overview-title">5つの業務を、<br><em>操作で確かめる。</em></h1><p>5業務の画面と判断ルールを、架空データで試せます。本番で必要な接続・権限・保存は、この試作では未実装です。</p><div class="hero-actions"><button class="primary" type="button" data-go="portal">①からデモを始める <span aria-hidden="true">→</span></button><button class="ghost" type="button" id="jump-to-scope">何ができるか確認</button></div></div>
+          <div class="hero-copy"><span class="eyebrow">INTERACTIVE CONCEPT / 2026</span><h1 id="overview-title">5つの業務を、<br><em>操作で確かめる。</em></h1><p>最初は下の「①からデモを始める」を押してください。各画面の青い案内ボタンを押すだけで、結果と次の操作が表示されます。架空データの試作です。</p><div class="hero-actions"><button class="primary" type="button" data-go="portal">①からデモを始める <span aria-hidden="true">→</span></button><button class="ghost" type="button" id="jump-to-scope">何ができるか確認</button></div></div>
           <div class="hero-visual" aria-label="業務フローの概要"><div class="visual-label">入社手続 / SAMPLE CASE</div><div class="visual-person"><span class="person-icon" aria-hidden="true">人</span><span><strong>山田 太郎</strong><small>株式会社ABC · 架空の入社手続</small></span><span class="state-chip">進行中</span></div><div class="visual-route"><span>電子申請</span><b>→</b><span>公文書確認</span><b>→</b><span>顧問先共有</span></div><div class="visual-bottom"><span class="pulse-dot"></span>メール整理と給与の前後作業も同じワークスペースへ</div></div>
         </div>
         <div class="notice" role="note"><span aria-hidden="true">ⓘ</span><p><strong>自主制作の選考用デモです。</strong>すべて架空データです。SharePoint、SPFx、Outlook、弥生給与、Microsoft 365には接続していません。表示上の権限切り替えは、本番の認証・アクセス制御を代替しません。</p></div>
@@ -138,6 +138,7 @@
       <footer class="footer"><span>© 2026 KazumaTeraokashoten · 自主制作デモ</span><span>架空データ / 外部送信なし</span></footer>
     </main>
   </div>
+  <section id="action-dock" class="action-dock" aria-label="操作結果と次の案内" aria-live="polite" hidden></section>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

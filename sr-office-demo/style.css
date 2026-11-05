@@ -194,3 +194,33 @@
 @media(max-width:1250px){.payroll-command{display:block}.payroll-command-actions{margin-top:18px}.payroll-explain-grid{grid-template-columns:1fr}}
 @media(max-width:900px){.payroll-pipeline{grid-template-columns:repeat(3,minmax(0,1fr))}.payroll-totals{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.payroll-command{padding:18px}.payroll-command-actions{display:grid;grid-template-columns:1fr}.payroll-command-actions select{width:100%}.payroll-pipeline{grid-template-columns:repeat(2,minmax(0,1fr))}.payroll-pipeline-panel,.payroll-input-panel,.payroll-formula-panel,.payroll-issues,.payroll-results{padding:17px}.payroll-result-footer{display:block}.payroll-result-footer button{width:100%;margin-top:12px}.payroll-totals strong{font-size:16px}}
+
+/* Persistent guided-operation feedback */
+.guide-head p{font-size:13px}
+.guide-now{align-items:center}
+.guide-now p{font-size:13px}
+.guide-cta{min-width:230px;max-width:350px;line-height:1.45;font-size:13px}
+.guide-result{margin:13px 0 0;padding:15px 17px;border:1px solid #c9e7d9;background:#f1fbf6;border-radius:11px;color:#225543}
+.guide-result.is-empty{border-color:#dce7f2;background:#f7faff;color:#4d6582}
+.guide-result>span{display:block;font-size:11px;font-weight:900;letter-spacing:.06em;margin-bottom:5px}
+.guide-result strong{display:block;font-size:14px;line-height:1.5}
+.guide-result p{font-size:13px;line-height:1.65;margin:5px 0 0}
+.action-dock{position:fixed;right:20px;bottom:20px;z-index:50;width:min(430px,calc(100vw - 40px));padding:18px 20px;border:1px solid #b7d4eb;border-radius:15px;background:#fff;box-shadow:0 18px 50px rgba(16,47,84,.24);color:#274560}
+.action-dock[hidden]{display:none}
+.action-dock-head{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.action-dock-head span{font-size:11px;font-weight:900;color:#2d70b8;letter-spacing:.05em}
+.action-dock-close{border:0;background:#eff4fa;border-radius:8px;width:28px;height:28px;flex:none;font-size:17px;color:#4e6884;cursor:pointer}
+.action-dock strong{display:block;font-size:15px;margin:4px 0 5px}
+.action-dock p{font-size:13px;line-height:1.6;color:#4b6078;margin:0 0 12px}
+.action-dock-next{border-top:1px solid #e0e9f2;padding-top:11px}
+.action-dock-next span{display:block;color:#607791;font-size:11px;font-weight:900;margin-bottom:5px}
+.action-dock-next button{width:100%;text-align:left;border:0;border-radius:8px;background:#1d62b1;color:#fff;padding:11px 13px;font-size:13px;font-weight:800;cursor:pointer}
+.action-dock-next button:disabled{background:#e8eef5;color:#5d7086;cursor:wait}
+.action-dock-next button:focus-visible,.action-dock-close:focus-visible{outline:3px solid #f1a847;outline-offset:2px}
+@media(max-width:760px){.guide-cta{max-width:none;min-width:0}.action-dock{right:10px;bottom:10px;width:calc(100vw - 20px);padding:14px 16px}.action-dock p{max-height:78px;overflow:auto}}
+
+.action-dock-view{border:0;background:transparent;color:#1e65aa;font-size:12px;font-weight:800;padding:2px 0 10px;cursor:pointer;text-decoration:underline}
+.action-dock-view:focus-visible{outline:3px solid #f1a847;outline-offset:2px}
+
+.payroll-pipeline-step{min-height:100px}
+.payroll-pipeline-step small{line-height:1.45}
