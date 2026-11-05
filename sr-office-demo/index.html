@@ -20,13 +20,14 @@
       <a class="identity" href="#overview" data-nav="overview"><span class="identity-mark" aria-hidden="true">OS</span><span><strong>OfficeFlow</strong><small>社労士事務所向け構想</small></span></a>
       <div class="side-section">WORKSPACE</div>
       <nav class="side-nav" aria-label="画面を切り替える">
-        <button type="button" class="nav-item is-active" data-nav="overview" aria-current="page"><span aria-hidden="true">◫</span>概要・業務フロー</button>
-        <button type="button" class="nav-item" data-nav="documents"><span aria-hidden="true">▤</span>公文書の取得・仕分け <span id="nav-review" class="nav-count">0</span></button>
-        <button type="button" class="nav-item" data-nav="portal"><span aria-hidden="true">▣</span>顧問先ポータル</button>
-        <button type="button" class="nav-item" data-nav="mail"><span aria-hidden="true">✉</span>Outlookメール整理 <span id="nav-mail" class="nav-count">0</span></button>
-        <button type="button" class="nav-item" data-nav="payroll"><span aria-hidden="true">▥</span>給与計算の前後作業</button>
-        <button type="button" class="nav-item" data-nav="cases"><span aria-hidden="true">◷</span>手続・給与の進捗管理</button>
+        <button type="button" class="nav-item is-active" data-nav="overview" aria-current="page"><span class="nav-glyph" aria-hidden="true">⌂</span>全体像・操作ガイド</button>
+        <button type="button" class="nav-item" data-nav="portal"><span class="nav-glyph">①</span>顧問先との資料共有</button>
+        <button type="button" class="nav-item" data-nav="documents"><span class="nav-glyph">②</span>公文書の取得・仕分け <span id="nav-review" class="nav-count">0</span></button>
+        <button type="button" class="nav-item" data-nav="mail"><span class="nav-glyph">③</span>Outlookメール整理 <span id="nav-mail" class="nav-count">0</span></button>
+        <button type="button" class="nav-item" data-nav="payroll"><span class="nav-glyph">④</span>弥生給与の前後作業</button>
+        <button type="button" class="nav-item" data-nav="cases"><span class="nav-glyph">⑤</span>手続・給与の進捗管理</button>
       </nav>
+      <div class="side-progress"><div><span>体験した業務</span><strong id="side-progress">0 / 5</strong></div><div class="side-progress-track"><span id="side-progress-bar"></span></div><small>操作結果はブラウザ内の架空データです</small></div>
       <div class="side-section second">DESIGN NOTES</div>
       <nav class="side-nav" aria-label="設計について">
         <button type="button" class="nav-item" data-nav="architecture"><span aria-hidden="true">◇</span>本番構成と検証事項</button>
@@ -39,19 +40,20 @@
 
       <section class="view" id="overview" aria-labelledby="overview-title">
         <div class="hero">
-          <div class="hero-copy"><span class="eyebrow">INTERACTIVE CONCEPT / 2026</span><h1 id="overview-title">社労士事務所の5業務を、<br><em>操作で確かめる。</em></h1><p>5業務の画面と判断ルールを、架空データで試せます。本番で必要な接続・権限・保存は、この試作では未実装です。</p><div class="hero-actions"><button class="primary" type="button" id="jump-to-scope">要件との対応を見る <span aria-hidden="true">→</span></button><button class="ghost" type="button" data-go="architecture">実装方針を見る</button></div></div>
+          <div class="hero-copy"><span class="eyebrow">INTERACTIVE CONCEPT / 2026</span><h1 id="overview-title">5つの業務を、<br><em>操作で確かめる。</em></h1><p>5業務の画面と判断ルールを、架空データで試せます。本番で必要な接続・権限・保存は、この試作では未実装です。</p><div class="hero-actions"><button class="primary" type="button" data-go="portal">①からデモを始める <span aria-hidden="true">→</span></button><button class="ghost" type="button" id="jump-to-scope">何ができるか確認</button></div></div>
           <div class="hero-visual" aria-label="業務フローの概要"><div class="visual-label">入社手続 / SAMPLE CASE</div><div class="visual-person"><span class="person-icon" aria-hidden="true">人</span><span><strong>山田 太郎</strong><small>株式会社ABC · 架空の入社手続</small></span><span class="state-chip">進行中</span></div><div class="visual-route"><span>電子申請</span><b>→</b><span>公文書確認</span><b>→</b><span>顧問先共有</span></div><div class="visual-bottom"><span class="pulse-dot"></span>メール整理と給与の前後作業も同じワークスペースへ</div></div>
         </div>
         <div class="notice" role="note"><span aria-hidden="true">ⓘ</span><p><strong>自主制作の選考用デモです。</strong>すべて架空データです。SharePoint、SPFx、Outlook、弥生給与、Microsoft 365には接続していません。表示上の権限切り替えは、本番の認証・アクセス制御を代替しません。</p></div>
+        <div class="panel scenario-panel"><div class="panel-heading"><div><span class="eyebrow dark">LIVE COVERAGE</span><h2>①から⑤まで、順番に体験</h2><p>各画面の青い案内から進めます。押す前に、何が起きるか確認できます。</p></div><strong id="scenario-count">0 / 5</strong></div><div id="scenario-list" class="scenario-list"></div></div>
         <section class="scope-panel" id="scope" aria-labelledby="scope-title">
           <div class="scope-heading"><div><span class="eyebrow dark">WHAT THIS DEMO PROVES</span><h2 id="scope-title">5項目の業務フローを画面で再現。本番化には実連携が必要です。</h2><p>操作できるのは架空データを使った業務の流れと確認ルールです。顧問先が実際にログインして資料を受け取る仕組みや、外部サービスとの自動連携は未実装です。</p></div><span class="scope-badge">試作の到達点を明示</span></div>
           <div class="scope-legend"><span><b>画面上で試せる</b> 操作・判断・表示のシミュレーション</span><span><b>本番で必要</b> 実接続・権限・保存・検証</span></div>
           <div class="scope-grid">
-            <article class="scope-card"><div class="scope-card-title"><span>①</span><h3>顧問先との安全な情報共有</h3></div><p><strong>試せる</strong> 公文書・給与資料・就業規則の公開承認と、顧問先向け表示。</p><p><strong>未実装</strong> 本人認証、顧問先間の実アクセス制御、実ファイルの保存・配信。</p><button type="button" data-go="portal">画面を確認 →</button></article>
-            <article class="scope-card"><div class="scope-card-title"><span>②</span><h3>電子申請後の公文書処理</h3></div><p><strong>試せる</strong> 架空PDFの取得、事業所番号での振り分け、重複と不明書類の保留。</p><p><strong>未実装</strong> 電子申請サービスからのダウンロードとSharePointへの実保存。</p><button type="button" data-go="documents">画面を確認 →</button></article>
-            <article class="scope-card"><div class="scope-card-title"><span>③</span><h3>Outlookのメール・添付整理</h3></div><p><strong>試せる</strong> 架空メールの分類、保存先候補、送信元不明と許可外形式の隔離。</p><p><strong>未実装</strong> Outlook／Graphからの取得、添付の検疫と実保存。</p><button type="button" data-go="mail">画面を確認 →</button></article>
-            <article class="scope-card"><div class="scope-card-title"><span>④</span><h3>弥生給与の前後作業</h3></div><p><strong>試せる</strong> 勤怠の事前照合、汎用CSV、計算後を想定した差額確認。</p><p><strong>未実装</strong> 弥生給与／Nextとの連携、実データ変換、給与計算そのもの。</p><button type="button" data-go="payroll">画面を確認 →</button></article>
-            <article class="scope-card"><div class="scope-card-title"><span>⑤</span><h3>手続・給与の進捗管理</h3></div><p><strong>試せる</strong> 担当・期限・工程の一覧、公開承認に連動する状態更新。</p><p><strong>未実装</strong> 複数人で使う永続台帳、通知、監査記録。</p><button type="button" data-go="cases">画面を確認 →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>①</span><h3>顧問先との安全な情報共有</h3></div><p><strong>試せる</strong> 公文書・給与資料・就業規則の公開承認と、顧問先向け表示。</p><p><strong>未実装</strong> 本人認証、顧問先間の実アクセス制御、実ファイルの保存・配信。</p><button type="button" data-go="portal">デモ①を試す →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>②</span><h3>電子申請後の公文書処理</h3></div><p><strong>試せる</strong> 架空PDFの取得、事業所番号での振り分け、重複と不明書類の保留。</p><p><strong>未実装</strong> 電子申請サービスからのダウンロードとSharePointへの実保存。</p><button type="button" data-go="documents">デモ②を試す →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>③</span><h3>Outlookのメール・添付整理</h3></div><p><strong>試せる</strong> 架空メールの分類、保存先候補、送信元不明と許可外形式の隔離。</p><p><strong>未実装</strong> Outlook／Graphからの取得、添付の検疫と実保存。</p><button type="button" data-go="mail">デモ③を試す →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>④</span><h3>弥生給与の前後作業</h3></div><p><strong>試せる</strong> 勤怠の事前照合、汎用CSV、計算後を想定した差額確認。</p><p><strong>未実装</strong> 弥生給与／Nextとの連携、実データ変換、給与計算そのもの。</p><button type="button" data-go="payroll">デモ④を試す →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>⑤</span><h3>手続・給与の進捗管理</h3></div><p><strong>試せる</strong> 担当・期限・工程の一覧、公開承認に連動する状態更新。</p><p><strong>未実装</strong> 複数人で使う永続台帳、通知、監査記録。</p><button type="button" data-go="cases">デモ⑤を試す →</button></article>
           </div>
         </section>
 
@@ -64,12 +66,13 @@
           <article class="kpi"><span class="kpi-icon blue">▥</span><span>給与工程</span><strong id="kpi-payroll">0<small>/ 4</small></strong><em>株式会社ABC / 11月分</em></article>
           <article class="kpi"><span class="kpi-icon green">◷</span><span>進行中の案件</span><strong id="kpi-cases">3<small>件</small></strong><em>手続・給与の一覧</em></article>
         </div>
-        <div class="panel scenario-panel"><div class="panel-heading"><div><span class="eyebrow dark">LIVE COVERAGE</span><h2>一連の操作を順番に試す</h2><p>各行の手順を実行すると「試した」に変わります。実サービスへの接続完了を示すものではありません。</p></div><strong id="scenario-count">0 / 5</strong></div><div id="scenario-list" class="scenario-list"></div></div>
+
         <div class="overview-bottom"><div><span class="eyebrow dark">AUDIT TRAIL</span><h2>何が起きたかを残す。</h2><p>仕分け、確認、共有、進捗更新の操作を一覧で追えます。本番ではMicrosoft 365の監査・保持設定と合わせて設計します。</p></div><ol id="overview-log" class="timeline"></ol></div>
       </section>
 
       <section class="view" id="documents" aria-labelledby="documents-title" hidden>
-        <div class="page-header"><div><span class="eyebrow dark">01 / DOCUMENT AUTOMATION</span><h1 id="documents-title">公文書の取得と仕分け</h1><p>電子申請後に届いた想定の架空PDF4件を、取得から顧問先別の模擬保存まで処理します。判別不能・重複は公開せず職員が確認します。</p></div><span class="page-header-icon" aria-hidden="true">▤</span></div>
+        <div class="page-header"><div><span class="eyebrow dark">② / DOCUMENT AUTOMATION</span><h1 id="documents-title">公文書の取得と仕分け</h1><p>電子申請後に届いた想定の架空PDF4件を、取得から顧問先別の模擬保存まで処理します。判別不能・重複は公開せず職員が確認します。</p></div><span class="page-header-icon" aria-hidden="true">▤</span></div>
+        <div id="guide-documents" class="demo-guide"></div>
         <div class="flow-strip"><div><span>01</span><strong>取得</strong><small>架空のPDF</small></div><b>→</b><div><span>02</span><strong>照合</strong><small>事業所番号・重複</small></div><b>→</b><div><span>03</span><strong>確認</strong><small>不明な書類を隔離</small></div><b>→</b><div><span>04</span><strong>模擬保存</strong><small>顧問先別</small></div><b>→</b><div><span>05</span><strong>公開承認</strong><small>職員の判断</small></div></div>
         <div class="toolbar"><div><strong>受信ボックス</strong><small>例示用データ。実際の電子申請サービス等から取得しません。</small></div><div class="toolbar-actions"><button class="outline" id="run-download" type="button">公文書を一括取得（模擬）</button><button class="primary" id="run-sort" type="button">仕分けを実行</button><button class="outline" id="reset-sort" type="button">文書処理を初期化</button></div></div>
         <div class="work-grid"><div class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>文書</th><th>照合情報</th><th>判定</th><th>操作</th></tr></thead><tbody id="document-rows"></tbody></table></div></div><aside class="panel side-panel"><span class="eyebrow dark">REVIEW QUEUE</span><h2>要確認と公開承認</h2><p>識別できない文書は、誤配信を避けるため確認待ちにします。</p><div id="review-queue"></div><hr><div class="assurance"><span aria-hidden="true">◇</span><div><strong>再実行しても二重登録しない設計</strong><p>文書IDと内容ハッシュ相当のキーを用いた説明用判定です。本番では取得元の一意IDと更新履歴を確認します。</p></div></div></aside></div>
@@ -77,7 +80,8 @@
       </section>
 
       <section class="view" id="portal" aria-labelledby="portal-title" hidden>
-        <div class="page-header"><div><span class="eyebrow dark">02 / CLIENT PORTAL</span><h1 id="portal-title">顧問先ポータル</h1><p>公文書・給与資料・就業規則を、職員の公開承認後に顧問先ごとの画面へ表示します。表示対象は役割と顧問先に連動します。</p></div><span class="page-header-icon green" aria-hidden="true">▣</span></div>
+        <div class="page-header"><div><span class="eyebrow dark">① / CLIENT PORTAL</span><h1 id="portal-title">顧問先ポータル</h1><p>公文書・給与資料・就業規則を、職員の公開承認後に顧問先ごとの画面へ表示します。表示対象は役割と顧問先に連動します。</p></div><span class="page-header-icon green" aria-hidden="true">▣</span></div>
+        <div id="guide-portal" class="demo-guide"></div>
         <div class="notice warning"><span aria-hidden="true">!</span><p><strong>権限表示はシミュレーションです。</strong>本番ではテナント、Entra ID、SharePointのサイト・ライブラリ権限、外部ゲストの招待・失効を確認します。</p></div>
         <div class="portal-controls panel"><div><label for="role-select">表示する役割</label><select id="role-select"><option value="staff">事務所職員</option><option value="client">顧問先担当者（株式会社ABC）</option></select></div><div><label for="company-select">対象の顧問先</label><select id="company-select"><option value="abc">株式会社ABC</option><option value="def">有限会社北斗工業</option></select></div><div class="portal-access" id="access-note"></div></div>
         <div class="portal-header"><div class="company-logo" id="company-monogram">ABC</div><div><span>顧問先ワークスペース</span><h2 id="company-title">株式会社ABC</h2><p id="company-meta">事業所番号 28001234 · 架空データ</p></div><span class="portal-secure">閲覧範囲を限定</span></div>
@@ -88,7 +92,8 @@
       </section>
 
       <section class="view" id="mail" aria-labelledby="mail-title" hidden>
-        <div class="page-header"><div><span class="eyebrow dark">03 / OUTLOOK INTAKE</span><h1 id="mail-title">メールと添付ファイルの整理</h1><p>架空の受信メールを顧問先別に判定し、添付ファイルの模擬保存先を決めます。送信元不明と許可外形式は自動保存しません。</p></div><span class="page-header-icon purple" aria-hidden="true">✉</span></div>
+        <div class="page-header"><div><span class="eyebrow dark">③ / OUTLOOK INTAKE</span><h1 id="mail-title">メールと添付ファイルの整理</h1><p>架空の受信メールを顧問先別に判定し、添付ファイルの模擬保存先を決めます。送信元不明と許可外形式は自動保存しません。</p></div><span class="page-header-icon purple" aria-hidden="true">✉</span></div>
+        <div id="guide-mail" class="demo-guide"></div>
         <div class="notice warning"><span aria-hidden="true">!</span><p><strong>Outlookとは接続していません。</strong>メール本文・添付はすべて架空の見本です。本番ではMicrosoft Graphの権限、送信元確認、マルウェア対策、保存先権限を検証します。</p></div>
         <div class="toolbar"><div><strong>受信トレイのサンプル</strong><small>実メールや実ファイルを読み込みません。</small></div><div class="toolbar-actions"><button class="primary" id="run-mail" type="button">整理ルールを実行</button><button class="outline" id="reset-mail" type="button">初期化</button></div></div>
         <div class="work-grid"><div class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>メール</th><th>添付</th><th>保管先</th><th>判定</th></tr></thead><tbody id="mail-rows"></tbody></table></div></div><aside class="panel side-panel"><span class="eyebrow dark">EXCEPTION HANDLING</span><h2>自動保存しないもの</h2><p>送信元不明は要確認、許可外形式は隔離し、自動保存しません。</p><div id="mail-review"></div><hr><div class="assurance"><span aria-hidden="true">◇</span><div><strong>原本と判断履歴を残す</strong><p>本番ではメッセージID、添付ID、保存先、担当者の判断を台帳化します。</p></div></div></aside></div>
@@ -96,7 +101,8 @@
       </section>
 
       <section class="view" id="payroll" aria-labelledby="payroll-title" hidden>
-        <div class="page-header"><div><span class="eyebrow dark">04 / PAYROLL OPERATIONS</span><h1 id="payroll-title">弥生給与の前後作業</h1><p>勤怠データの事前照合、確認用CSV、計算結果の差分確認、顧問先への資料共有準備を一連の操作で示します。</p></div><span class="page-header-icon purple" aria-hidden="true">▥</span></div>
+        <div class="page-header"><div><span class="eyebrow dark">④ / PAYROLL OPERATIONS</span><h1 id="payroll-title">弥生給与の前後作業</h1><p>勤怠データの事前照合、確認用CSV、計算結果の差分確認、顧問先への資料共有準備を一連の操作で示します。</p></div><span class="page-header-icon purple" aria-hidden="true">▥</span></div>
+        <div id="guide-payroll" class="demo-guide"></div>
         <div class="notice" role="note"><span aria-hidden="true">ⓘ</span><p><strong>給与計算そのものは行いません。</strong>架空の従業員・金額を使用します。生成するCSVは説明用の汎用データで、弥生給与・弥生給与 Nextへの直接取込形式を保証しません。</p></div>
         <div class="payroll-summary"><div><span>対象月</span><strong>2026年11月</strong></div><div><span>顧問先</span><strong>株式会社ABC</strong></div><div><span>進捗</span><strong id="payroll-progress">0 / 4 完了</strong></div><div><span>次の確認</span><strong id="payroll-next">勤怠データの受領</strong></div></div>
         <div class="payroll-layout"><div class="panel"><div class="panel-heading"><div><span class="eyebrow dark">MONTHLY WORKFLOW</span><h2>前後作業の流れ</h2></div><button id="reset-payroll" class="text-button" type="button">進捗を初期化</button></div><div id="payroll-steps" class="checklist"></div></div><div class="panel guidance-panel"><span class="eyebrow dark">HUMAN IN THE LOOP</span><h2>確認が必要な地点</h2><div class="guidance-item"><span>✓</span><p><strong>計算前</strong>社員コード、対象月、勤怠項目、重複行を照合</p></div><div class="guidance-item"><span>!</span><p><strong>計算後</strong>前月との差分を検出し、手当・控除・例外を担当職員が確認</p></div><div class="guidance-item"><span>↺</span><p><strong>公開前</strong>給与資料の顧問先、閲覧者、対象月を再確認</p></div><div class="small-note">弥生製品への接続・給与計算・本番データの取込は行いません。</div></div></div>
@@ -107,14 +113,15 @@
       </section>
 
       <section class="view" id="cases" aria-labelledby="cases-title" hidden>
-        <div class="page-header"><div><span class="eyebrow dark">05 / CASE TRACKING</span><h1 id="cases-title">手続・給与の進捗管理</h1><p>顧問先、担当、期限、次の作業を一覧にします。公文書や給与資料の公開完了も案件の状態と結び付けます。状態更新はすべて模擬操作です。</p></div><span class="page-header-icon green" aria-hidden="true">◷</span></div>
+        <div class="page-header"><div><span class="eyebrow dark">⑤ / CASE TRACKING</span><h1 id="cases-title">手続・給与の進捗管理</h1><p>顧問先、担当、期限、次の作業を一覧にします。公文書や給与資料の公開完了も案件の状態と結び付けます。状態更新はすべて模擬操作です。</p></div><span class="page-header-icon green" aria-hidden="true">◷</span></div>
+        <div id="guide-cases" class="demo-guide"></div>
         <div class="case-summary"><div><span>進行中</span><strong id="case-active">3件</strong></div><div><span>優先確認</span><strong id="case-due">2件</strong></div><div><span>完了</span><strong id="case-done">0件</strong></div></div>
         <div class="panel case-panel"><div class="panel-heading"><div><span class="eyebrow dark">WORK QUEUE</span><h2>案件一覧</h2></div><span class="tiny-label">架空の3案件</span></div><div class="case-filters"><label for="case-company">顧問先<select id="case-company"><option value="all">すべて</option><option value="abc">株式会社ABC</option><option value="def">有限会社北斗工業</option></select></label><label for="case-state">状況<select id="case-state"><option value="all">すべて</option><option value="active">進行中</option><option value="done">完了</option></select></label></div><div class="table-scroll"><table class="case-table"><thead><tr><th>案件</th><th>顧問先・担当</th><th>期限</th><th>現在の工程</th><th>次の操作</th></tr></thead><tbody id="case-rows"></tbody></table></div><p id="case-empty" class="empty-state" hidden>条件に一致する案件はありません。</p></div>
         <div class="split-notes"><div class="info-card"><span aria-hidden="true">01</span><div><strong>実務の状態を残す</strong><p>依頼受付、資料待ち、申請・計算、確認、顧問先共有を一件ごとに追跡します。</p></div></div><div class="info-card"><span aria-hidden="true">02</span><div><strong>公開待ちを完了にしない</strong><p>公文書や給与資料が公開される前に「完了」へ進めない模擬ルールです。</p></div></div></div>
       </section>
 
       <section class="view" id="architecture" aria-labelledby="architecture-title" hidden>
-        <div class="page-header"><div><span class="eyebrow dark">04 / IMPLEMENTATION PLAN</span><h1 id="architecture-title">SharePoint / SPFx 実装方針</h1><p>このデモを本番環境へ移す場合の構成案です。現行ライセンス、外部共有方針、接続元の仕様を調査してから確定します。</p></div><span class="page-header-icon ink" aria-hidden="true">◇</span></div>
+        <div class="page-header"><div><span class="eyebrow dark">DESIGN NOTE / IMPLEMENTATION PLAN</span><h1 id="architecture-title">SharePoint / SPFx 実装方針</h1><p>このデモを本番環境へ移す場合の構成案です。現行ライセンス、外部共有方針、接続元の仕様を調査してから確定します。</p></div><span class="page-header-icon ink" aria-hidden="true">◇</span></div>
         <div class="architecture-map"><div class="architecture-node front"><span>FRONTEND</span><strong>SPFx Web パーツ</strong><p>職員ダッシュボード／顧問先画面／確認キュー／進捗一覧</p></div><b>↕</b><div class="architecture-node"><span>DATA & ACCESS</span><strong>SharePoint</strong><p>顧問先単位のサイト・ライブラリ、Microsoft Lists、版管理</p></div><b>↕</b><div class="architecture-node"><span>AUTOMATION</span><strong>Power Automate</strong><p>取得・照合・通知・承認フロー。OutlookはGraph連携を検証</p></div></div>
         <div class="design-grid"><article class="design-card"><span>01 / ACCESS</span><h2>顧問先ごとの境界</h2><p>Entra IDのゲスト招待、SharePointのサイト／ライブラリ権限、退職・契約終了時の失効を設計。画面表示だけで保護しません。</p></article><article class="design-card"><span>02 / DOCUMENTS</span><h2>誤配信を防ぐ仕分け</h2><p>事業所番号など確定情報で照合し、曖昧な文書は隔離。公開は職員承認を経て、誰が判断したかを記録します。</p></article><article class="design-card"><span>03 / OPERATIONS</span><h2>内製できる運用</h2><p>先行3〜5社でテンプレートと追加手順を検証。失敗・再実行・権限変更の手順書を残し、職員が運用できる形にします。</p></article><article class="design-card"><span>04 / INTEGRATION</span><h2>接続可否を先に調べる</h2><p>電子申請サービス、Outlook、弥生給与／弥生給与 Nextの公式な連携方法・利用条件を確認。利用できない連携を実装済みとは扱いません。</p></article></div>
         <div class="panel coverage-panel"><div class="panel-heading"><div><span class="eyebrow dark">REQUIREMENT COVERAGE</span><h2>5つの依頼と本番の構成候補</h2></div></div><div class="table-scroll"><table><thead><tr><th>業務</th><th>デモで見せる操作</th><th>本番で確認するもの</th></tr></thead><tbody><tr><td>顧問先との共有</td><td>職員承認・顧問先別表示</td><td>SharePoint権限、Entra IDゲスト設定</td></tr><tr><td>公文書の取得・仕分け</td><td>一括取得、照合、例外、重複保留</td><td>取得元の提供方法、一意ID、保存先</td></tr><tr><td>Outlook整理</td><td>添付判定、保管先、隔離</td><td>Microsoft Graph権限、保護対策</td></tr><tr><td>弥生給与の前後作業</td><td>事前照合、CSV、差分確認</td><td>製品別の取込形式、項目対応</td></tr><tr><td>進捗管理</td><td>担当・期限・工程・完了条件</td><td>Microsoft Lists、通知・監査</td></tr></tbody></table></div></div>

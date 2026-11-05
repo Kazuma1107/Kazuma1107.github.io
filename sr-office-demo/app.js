@@ -1,12 +1,12 @@
 (() => {
   'use strict';
   const views = {
-    overview: '概要・業務フロー',
-    documents: '公文書の取得・仕分け',
-    portal: '顧問先ポータル',
-    mail: 'Outlookメール整理',
-    payroll: '給与計算の前後作業',
-    cases: '手続・給与の進捗管理',
+    overview: '全体像・操作ガイド',
+    portal: '① 顧問先との資料共有',
+    documents: '② 公文書の取得・仕分け',
+    mail: '③ Outlookメール整理',
+    payroll: '④ 弥生給与の前後作業',
+    cases: '⑤ 手続・給与の進捗管理',
     architecture: '本番構成と検証事項'
   };
   const companies = {
@@ -237,7 +237,7 @@
     announce('資料を顧問先へ公開しました（画面上の模擬処理）。');
   }
   function renderPortal() {
-    if (role === 'client' && (docs.some(d => d.shared) || portalResources.some(r => r.published))) portalViewed = true;
+    if (role === 'client' && portalTab === 'rules' && portalResources.some(r => r.id === 'RES-R01' && r.published)) portalViewed = true;
     $('role-select').value = role;
     const selector = $('company-select');
     if (role === 'client') company = 'abc';
@@ -459,7 +459,8 @@
     payrollLabels.forEach((item, index) => {
       const row = element('div', 'check-row' + (payrollDone[index] ? ' is-done' : ''));
       if (index === 0 && !payrollState.received) {
-        const button = element('button', '', '✓');
+        const button = element('button', 'attendance-action', '受領を確認');
+        button.id = 'confirm-attendance';
         button.type = 'button';
         button.setAttribute('aria-label', '勤怠データの受領を確認');
         button.addEventListener('click', () => {
@@ -574,15 +575,89 @@
       body.append(row);
     }
   }
+  const guideMeta = {
+    portal: { number: '①', title: '顧問先との安全な資料共有', source: '架空の就業規則PDF', operation: '職員が公開を承認し、顧問先表示に切り替える', outcome: '公開済みの資料だけが顧問先画面に表示される', boundary: '画面上の役割切替です。本番の認証・アクセス権ではありません。' },
+    documents: { number: '②', title: '電子申請後の公文書処理', source: '電子申請後に届いた想定の架空PDF4件', operation: '取得 → 事業所番号で照合 → 職員が公開承認', outcome: '対象顧問先に表示。重複・不明書類は保留', boundary: '実際の電子申請サイトからの取得やSharePoint保存は行いません。' },
+    mail: { number: '③', title: 'Outlookメール・添付整理', source: '架空の受信メール4件と添付', operation: '送信元と拡張子で分類し、保存先候補を決める', outcome: '2件を保存候補、1件を要確認、1件を隔離', boundary: 'Outlookに接続せず、実メールや添付を読み込みません。' },
+    payroll: { number: '④', title: '弥生給与の前後作業', source: '架空の勤怠3行と計算後を想定した金額', operation: '事前照合 → 確認用CSV → 差額確認 → 公開準備', outcome: '確認事項を残したまま確定せず、職員確認後に共有へ', boundary: '給与計算は行いません。CSVは弥生への直接取込形式ではありません。' },
+    cases: { number: '⑤', title: '手続・給与の進捗管理', source: '架空の手続2件・給与1件', operation: '担当・期限・工程を確認し、状態を更新する', outcome: '次の担当作業と公開前の進行制限を確認できる', boundary: '更新はブラウザ内のみで、複数人の台帳には保存しません。' }
+  };
+  function guideStage(id) {
+    const next = { portal: 'documents', documents: 'mail', mail: 'payroll', payroll: 'cases', cases: 'overview' };
+    const nextLabel = { portal: '② 公文書の取得・仕分けへ', documents: '③ Outlookメール整理へ', mail: '④ 弥生給与の前後作業へ', payroll: '⑤ 進捗管理へ', cases: '全体像に戻る' };
+    function complete(effect) { return { done: true, step: 0, total: 0, action: nextLabel[id], effect, run: () => navigate(next[id]) }; }
+    if (id === 'portal') {
+      const rule = portalResources.find(r => r.id === 'RES-R01');
+      if (portalViewed) return complete('株式会社ABCの顧問先表示で、公開済みの就業規則を確認しました。');
+      if (company !== 'abc') return { step: 1, total: 3, action: '対象を株式会社ABCに戻す', effect: 'このデモで公開する就業規則の顧問先をそろえます。', run: () => { company = 'abc'; renderAll(); } };
+      if (role !== 'staff' && !rule.published) return { step: 1, total: 3, action: '事務所職員の表示に切り替える', effect: '公開承認できる職員画面に戻ります。', run: () => { role = 'staff'; renderAll(); } };
+      if (!rule.published) return { step: 1, total: 3, action: '就業規則の公開を承認する', effect: '株式会社ABC向けの架空資料が「公開済み」になります。実ファイルは配信しません。', run: () => releaseResource('RES-R01') };
+      if (role !== 'client') return { step: 2, total: 3, action: '顧問先担当者の表示に切り替える', effect: '職員専用の公開待ち一覧が隠れ、ABC社の公開済み資料だけを表示する役割になります。', run: () => { role = 'client'; renderAll(); } };
+      return { step: 3, total: 3, action: '就業規則タブを開いて確認する', effect: '先ほど公開したABC社向けの資料カードが見えます。', run: () => document.querySelector('[data-doc-tab="rules"]').click() };
+    }
+    if (id === 'documents') {
+      const target = docs.find(d => d.id === 'DOC-01');
+      if (target.shared) return complete('DOC-01をABC社に公開。重複と顧問先不明の文書は自動公開されません。');
+      if (docs.some(d => d.status === 'received')) return { step: 1, total: 3, action: '架空の公文書4件を取得する', effect: '4件の表示が「取得済み」に変わります。実際のダウンロードは行いません。', run: runDownload };
+      if (docs.some(d => d.status === 'downloaded')) return { step: 2, total: 3, action: '事業所番号で仕分ける', effect: '2件は顧問先別の模擬保存、1件は不明で要確認、1件は重複保留になります。', run: runSort };
+      return { step: 3, total: 3, action: 'DOC-01の共有を承認する', effect: '職員の承認後、ABC社のポータルへ公開済みとして表示されます。', run: () => shareDocument('DOC-01') };
+    }
+    if (id === 'mail') {
+      if (mails.some(m => m.status !== 'pending')) return complete('分類結果は保存候補2件、要確認1件、隔離1件。実メールは処理していません。');
+      return { step: 1, total: 1, action: '架空メール4件を整理する', effect: '既知の送信元2件は保存先候補へ、不明な1件は要確認、ZIP添付1件は隔離になります。', run: runMail };
+    }
+    if (id === 'payroll') {
+      if (payrollState.prepared) return complete('架空の勤怠を照合し、差額を確認して給与資料を公開承認待ちにしました。');
+      if (!payrollState.received) return { step: 1, total: 8, action: '11月分の勤怠受領を確認する', effect: '対象月と受領元を確認した想定で、事前チェックが押せるようになります。', run: () => $('confirm-attendance').click() };
+      if (!payrollState.prechecked) return { step: 2, total: 8, action: '勤怠の事前チェックを実行する', effect: '社員コードの欠落と重複行の2件を検出します。', run: runPrecheck };
+      if (!payrollState.issues[0]) return { step: 3, total: 8, action: '社員コード欠落を確認済みにする', effect: '1件目の確認事項を職員が確認した想定にします。', run: () => resolvePayrollIssue(0) };
+      if (!payrollState.issues[1]) return { step: 4, total: 8, action: '勤怠の重複行を確認済みにする', effect: '二重計上を避ける確認を行った想定にします。', run: () => resolvePayrollIssue(1) };
+      if (!payrollState.csv) return { step: 5, total: 8, action: '説明用のCSVをダウンロードする', effect: '架空の3名分の汎用CSVがダウンロードされます。弥生への直接取込形式ではありません。', run: downloadPayrollCsv };
+      if (!payrollState.reconciled) return { step: 6, total: 8, action: '計算後の架空データを照合する', effect: '前月比で手当8,000円の差額を表示します。', run: runReconcile };
+      if (!payrollState.differenceChecked) return { step: 7, total: 8, action: '手当の差額を確認済みにする', effect: '職員が変動理由を確認した想定にします。給与額の自動確定ではありません。', run: approveDifference };
+      return { step: 8, total: 8, action: '給与資料を共有準備へ進める', effect: 'ポータルの職員画面に公開承認待ちとして追加します。', run: preparePayrollShare };
+    }
+    if (caseActivity) return complete('案件の工程が更新され、担当・期限・次の操作が一覧で確認できます。');
+    return { step: 1, total: 1, action: '雇用保険の手続を次の工程へ進める', effect: '案件の現在工程と次の操作が更新されます。実際の申請や通知は行いません。', run: () => advanceCase('PROC-241') };
+  }
+  function renderGuides() {
+    for (const id of ['portal', 'documents', 'mail', 'payroll', 'cases']) {
+      const meta = guideMeta[id];
+      const state = guideStage(id);
+      const slot = $('guide-' + id);
+      const head = element('div', 'guide-head');
+      const title = element('div');
+      title.append(element('span', 'guide-kicker', 'DEMO ' + meta.number + ' / ⑤  ·  架空データ'), element('h2', '', meta.title), element('p', '', 'この画面で何をするか、操作の結果まで順番に確認できます。'));
+      head.append(title, element('span', 'guide-mode', '外部サービスへの接続なし'));
+      const flow = element('div', 'guide-flow');
+      for (const [label, value] of [['入力', meta.source], ['この画面で行うこと', meta.operation], ['確認できる結果', meta.outcome]]) {
+        const card = element('div', 'guide-flow-item');
+        card.append(element('small', '', label), element('strong', '', value));
+        flow.append(card);
+      }
+      const now = element('div', 'guide-now' + (state.done ? ' is-complete' : ''));
+      const copy = element('div');
+      copy.append(element('span', 'guide-step', state.done ? '体験済み · 次のデモへ' : 'いまの操作 ' + state.step + ' / ' + state.total), element('strong', '', state.done ? 'この画面の操作を確認しました' : state.action), element('p', '', state.effect));
+      const button = element('button', 'guide-cta', state.done ? state.action : 'この操作を試す →');
+      button.type = 'button';
+      button.setAttribute('aria-label', state.action);
+      button.addEventListener('click', state.run);
+      now.append(copy, button);
+      slot.replaceChildren(head, now, flow, element('p', 'guide-boundary', meta.boundary + ' ブラウザを再読み込みするとデモの状態は初期化されます。'));
+    }
+  }
   function renderScenario() {
     const items = [
-      { title: '公文書の取得・仕分け', done: docs.some(d => d.shared), guide: '一括取得 → 仕分け → DOC-01の共有を承認', view: 'documents' },
-      { title: '顧問先との資料共有', done: portalViewed, guide: '職員で資料を公開し、表示する役割を「顧問先担当者」に切り替える', view: 'portal' },
-      { title: 'Outlookメール・添付整理', done: mails.some(m => m.status !== 'pending'), guide: '「整理ルールを実行」を押し、保存候補・要確認・隔離を比べる', view: 'mail' },
-      { title: '弥生給与の前後作業', done: payrollState.prepared, guide: '勤怠受領 → 事前チェック → CSV → 差分確認 → 共有準備', view: 'payroll' },
-      { title: '手続・給与の進捗管理', done: caseActivity, guide: '案件の「次へ」を押し、資料公開前の進行制限も確認する', view: 'cases' }
+      { title: '① 顧問先との資料共有', done: portalViewed, guide: '就業規則を公開承認 → 顧問先表示へ切替 → 資料を確認', view: 'portal' },
+      { title: '② 公文書の取得・仕分け', done: docs.some(d => d.shared), guide: '架空の4件を取得 → 仕分け → DOC-01の共有を承認', view: 'documents' },
+      { title: '③ Outlookメール・添付整理', done: mails.some(m => m.status !== 'pending'), guide: '4件を分類し、保存候補・要確認・隔離を確認', view: 'mail' },
+      { title: '④ 弥生給与の前後作業', done: payrollState.prepared, guide: '勤怠受領 → 事前照合 → CSV → 差分確認 → 共有準備', view: 'payroll' },
+      { title: '⑤ 手続・給与の進捗管理', done: caseActivity, guide: '案件の工程を更新し、次の担当作業を確認', view: 'cases' }
     ];
-    $('scenario-count').textContent = items.filter(item => item.done).length + ' / 5 試した';
+    const done = items.filter(item => item.done).length;
+    $('scenario-count').textContent = done + ' / 5 試した';
+    $('side-progress').textContent = done + ' / 5';
+    $('side-progress-bar').style.width = (done * 20) + '%';
     const list = $('scenario-list');
     list.replaceChildren();
     items.forEach((item, index) => {
@@ -591,7 +666,7 @@
       const num = element('span', 'scenario-num', String(index + 1).padStart(2, '0'));
       const copy = element('span', 'scenario-copy');
       copy.append(element('strong', '', item.title), element('small', '', item.guide));
-      button.append(num, copy, element('span', 'scenario-state', item.done ? '試した ✓' : '画面を開く →'));
+      button.append(num, copy, element('span', 'scenario-state', item.done ? '試した ✓' : 'デモを開く →'));
       button.addEventListener('click', () => navigate(item.view));
       list.append(button);
     });
@@ -602,6 +677,7 @@
     renderMail();
     renderPayroll();
     renderCases();
+    renderGuides();
     renderScenario();
     updateCounts();
     renderLogs();
@@ -637,11 +713,11 @@
         tab.classList.toggle('is-active', active);
         tab.setAttribute('aria-selected', String(active));
       });
-      renderPortal();
+      renderAll();
     });
   });
   $('role-select').addEventListener('change', e => { role = e.target.value; renderAll(); });
-  $('company-select').addEventListener('change', e => { company = e.target.value; renderPortal(); });
+  $('company-select').addEventListener('change', e => { company = e.target.value; renderAll(); });
   $('run-download').addEventListener('click', runDownload);
   $('run-sort').addEventListener('click', runSort);
   $('reset-sort').addEventListener('click', resetDocs);
