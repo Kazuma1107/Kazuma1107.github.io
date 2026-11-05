@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#17345d">
-  <meta name="description" content="社労士事務所の情報共有、公文書仕分け、進捗管理を一連の操作で示す、SharePoint / SPFx導入想定の自主制作デモ。">
+  <meta name="description" content="社労士事務所の5業務を画面で試し、実装済みの操作と本番に必要な連携を区別して示す自主制作デモ。">
   <title>社労士事務所OS | SharePoint / SPFx 導入想定デモ</title>
   <link rel="stylesheet" href="./style.css">
   <script src="./app.js" defer></script>
@@ -39,10 +39,22 @@
 
       <section class="view" id="overview" aria-labelledby="overview-title">
         <div class="hero">
-          <div class="hero-copy"><span class="eyebrow">INTERACTIVE CONCEPT / 2026</span><h1 id="overview-title">5つの業務を、<br><em>一つの流れに。</em></h1><p>顧問先との資料共有、公文書、Outlook、給与の前後作業、案件進捗。事務所の日々の仕事を、操作で確認できる構想にまとめました。</p><div class="hero-actions"><button class="primary" type="button" data-go="documents">公文書の流れを試す <span aria-hidden="true">→</span></button><button class="ghost" type="button" data-go="architecture">実装方針を見る</button></div></div>
+          <div class="hero-copy"><span class="eyebrow">INTERACTIVE CONCEPT / 2026</span><h1 id="overview-title">社労士事務所の5業務を、<br><em>操作で確かめる。</em></h1><p>5業務の画面と判断ルールを、架空データで試せます。本番で必要な接続・権限・保存は、この試作では未実装です。</p><div class="hero-actions"><button class="primary" type="button" id="jump-to-scope">要件との対応を見る <span aria-hidden="true">→</span></button><button class="ghost" type="button" data-go="architecture">実装方針を見る</button></div></div>
           <div class="hero-visual" aria-label="業務フローの概要"><div class="visual-label">入社手続 / SAMPLE CASE</div><div class="visual-person"><span class="person-icon" aria-hidden="true">人</span><span><strong>山田 太郎</strong><small>株式会社ABC · 架空の入社手続</small></span><span class="state-chip">進行中</span></div><div class="visual-route"><span>電子申請</span><b>→</b><span>公文書確認</span><b>→</b><span>顧問先共有</span></div><div class="visual-bottom"><span class="pulse-dot"></span>メール整理と給与の前後作業も同じワークスペースへ</div></div>
         </div>
         <div class="notice" role="note"><span aria-hidden="true">ⓘ</span><p><strong>自主制作の選考用デモです。</strong>すべて架空データです。SharePoint、SPFx、Outlook、弥生給与、Microsoft 365には接続していません。表示上の権限切り替えは、本番の認証・アクセス制御を代替しません。</p></div>
+        <section class="scope-panel" id="scope" aria-labelledby="scope-title">
+          <div class="scope-heading"><div><span class="eyebrow dark">WHAT THIS DEMO PROVES</span><h2 id="scope-title">5項目の業務フローを画面で再現。本番化には実連携が必要です。</h2><p>操作できるのは架空データを使った業務の流れと確認ルールです。顧問先が実際にログインして資料を受け取る仕組みや、外部サービスとの自動連携は未実装です。</p></div><span class="scope-badge">試作の到達点を明示</span></div>
+          <div class="scope-legend"><span><b>画面上で試せる</b> 操作・判断・表示のシミュレーション</span><span><b>本番で必要</b> 実接続・権限・保存・検証</span></div>
+          <div class="scope-grid">
+            <article class="scope-card"><div class="scope-card-title"><span>①</span><h3>顧問先との安全な情報共有</h3></div><p><strong>試せる</strong> 公文書・給与資料・就業規則の公開承認と、顧問先向け表示。</p><p><strong>未実装</strong> 本人認証、顧問先間の実アクセス制御、実ファイルの保存・配信。</p><button type="button" data-go="portal">画面を確認 →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>②</span><h3>電子申請後の公文書処理</h3></div><p><strong>試せる</strong> 架空PDFの取得、事業所番号での振り分け、重複と不明書類の保留。</p><p><strong>未実装</strong> 電子申請サービスからのダウンロードとSharePointへの実保存。</p><button type="button" data-go="documents">画面を確認 →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>③</span><h3>Outlookのメール・添付整理</h3></div><p><strong>試せる</strong> 架空メールの分類、保存先候補、送信元不明と許可外形式の隔離。</p><p><strong>未実装</strong> Outlook／Graphからの取得、添付の検疫と実保存。</p><button type="button" data-go="mail">画面を確認 →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>④</span><h3>弥生給与の前後作業</h3></div><p><strong>試せる</strong> 勤怠の事前照合、汎用CSV、計算後を想定した差額確認。</p><p><strong>未実装</strong> 弥生給与／Nextとの連携、実データ変換、給与計算そのもの。</p><button type="button" data-go="payroll">画面を確認 →</button></article>
+            <article class="scope-card"><div class="scope-card-title"><span>⑤</span><h3>手続・給与の進捗管理</h3></div><p><strong>試せる</strong> 担当・期限・工程の一覧、公開承認に連動する状態更新。</p><p><strong>未実装</strong> 複数人で使う永続台帳、通知、監査記録。</p><button type="button" data-go="cases">画面を確認 →</button></article>
+          </div>
+        </section>
+
         <div class="section-title"><div><span class="eyebrow dark">AT A GLANCE</span><h2>まず、今日の状況が分かる。</h2></div><p>操作後はこの数値と履歴が連動します。</p></div>
         <div class="kpi-grid">
           <article class="kpi"><span class="kpi-icon blue">▤</span><span>受信した公文書</span><strong id="kpi-received">4<small>件</small></strong><em>架空のサンプル</em></article>
@@ -52,15 +64,7 @@
           <article class="kpi"><span class="kpi-icon blue">▥</span><span>給与工程</span><strong id="kpi-payroll">0<small>/ 4</small></strong><em>株式会社ABC / 11月分</em></article>
           <article class="kpi"><span class="kpi-icon green">◷</span><span>進行中の案件</span><strong id="kpi-cases">3<small>件</small></strong><em>手続・給与の一覧</em></article>
         </div>
-        <div class="section-title slim"><div><span class="eyebrow dark">ONE CONNECTED JOURNEY</span><h2>5つの業務を操作で確認</h2></div></div>
-        <div class="journey">
-          <button type="button" class="journey-card" data-go="documents"><span>01</span><div class="journey-symbol blue">▤</div><h3>公文書の取得・仕分け</h3><p>取得、事業所番号照合、重複保留、職員の公開承認。</p><b>操作する →</b></button>
-          <button type="button" class="journey-card" data-go="portal"><span>02</span><div class="journey-symbol green">▣</div><h3>顧問先との資料共有</h3><p>公文書・給与資料・就業規則を顧問先別に公開。</p><b>操作する →</b></button>
-          <button type="button" class="journey-card" data-go="mail"><span>03</span><div class="journey-symbol purple">✉</div><h3>Outlook整理</h3><p>メールと添付の判定、要確認、保管先の選択。</p><b>操作する →</b></button>
-          <button type="button" class="journey-card" data-go="payroll"><span>04</span><div class="journey-symbol blue">▥</div><h3>給与計算の前後作業</h3><p>勤怠の事前照合、CSV、計算後の差分確認。</p><b>操作する →</b></button>
-          <button type="button" class="journey-card" data-go="cases"><span>05</span><div class="journey-symbol green">◷</div><h3>手続と給与の進捗</h3><p>担当・期限・状態を一覧化し、共有まで追跡。</p><b>操作する →</b></button>
-        </div>
-        <div class="panel scenario-panel"><div class="panel-heading"><div><span class="eyebrow dark">LIVE COVERAGE</span><h2>5業務の操作状況</h2><p>操作を進めると、確認できた工程にチェックが付きます。</p></div><strong id="scenario-count">0 / 5</strong></div><div id="scenario-list" class="scenario-list"></div></div>
+        <div class="panel scenario-panel"><div class="panel-heading"><div><span class="eyebrow dark">LIVE COVERAGE</span><h2>一連の操作を順番に試す</h2><p>各行の手順を実行すると「試した」に変わります。実サービスへの接続完了を示すものではありません。</p></div><strong id="scenario-count">0 / 5</strong></div><div id="scenario-list" class="scenario-list"></div></div>
         <div class="overview-bottom"><div><span class="eyebrow dark">AUDIT TRAIL</span><h2>何が起きたかを残す。</h2><p>仕分け、確認、共有、進捗更新の操作を一覧で追えます。本番ではMicrosoft 365の監査・保持設定と合わせて設計します。</p></div><ol id="overview-log" class="timeline"></ol></div>
       </section>
 

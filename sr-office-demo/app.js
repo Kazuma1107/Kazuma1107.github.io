@@ -48,6 +48,7 @@
   ];
   const history = [];
   let caseActivity = false;
+  let portalViewed = false;
   let role = 'staff';
   let company = 'abc';
   let portalTab = 'public';
@@ -236,6 +237,7 @@
     announce('資料を顧問先へ公開しました（画面上の模擬処理）。');
   }
   function renderPortal() {
+    if (role === 'client' && (docs.some(d => d.shared) || portalResources.some(r => r.published))) portalViewed = true;
     $('role-select').value = role;
     const selector = $('company-select');
     if (role === 'client') company = 'abc';
@@ -574,20 +576,23 @@
   }
   function renderScenario() {
     const items = [
-      ['公文書の取得・仕分け', docs.some(d => d.shared), 'documents'],
-      ['顧問先との情報共有', portalResources.some(r => r.published), 'portal'],
-      ['Outlookメール整理', mails.some(m => m.status !== 'pending'), 'mail'],
-      ['弥生給与の前後作業', payrollState.prepared, 'payroll'],
-      ['手続・給与の進捗管理', caseActivity, 'cases']
+      { title: '公文書の取得・仕分け', done: docs.some(d => d.shared), guide: '一括取得 → 仕分け → DOC-01の共有を承認', view: 'documents' },
+      { title: '顧問先との資料共有', done: portalViewed, guide: '職員で資料を公開し、表示する役割を「顧問先担当者」に切り替える', view: 'portal' },
+      { title: 'Outlookメール・添付整理', done: mails.some(m => m.status !== 'pending'), guide: '「整理ルールを実行」を押し、保存候補・要確認・隔離を比べる', view: 'mail' },
+      { title: '弥生給与の前後作業', done: payrollState.prepared, guide: '勤怠受領 → 事前チェック → CSV → 差分確認 → 共有準備', view: 'payroll' },
+      { title: '手続・給与の進捗管理', done: caseActivity, guide: '案件の「次へ」を押し、資料公開前の進行制限も確認する', view: 'cases' }
     ];
-    $('scenario-count').textContent = items.filter(x => x[1]).length + ' / 5';
+    $('scenario-count').textContent = items.filter(item => item.done).length + ' / 5 試した';
     const list = $('scenario-list');
     list.replaceChildren();
-    items.forEach((item, i) => {
-      const button = element('button', 'scenario-item' + (item[1] ? ' is-done' : ''));
+    items.forEach((item, index) => {
+      const button = element('button', 'scenario-item' + (item.done ? ' is-done' : ''));
       button.type = 'button';
-      button.append(element('span', 'scenario-num', item[1] ? '✓' : String(i + 1).padStart(2, '0')), element('strong', '', item[0]), element('span', 'scenario-state', item[1] ? '操作済み' : '試す →'));
-      button.addEventListener('click', () => navigate(item[2]));
+      const num = element('span', 'scenario-num', String(index + 1).padStart(2, '0'));
+      const copy = element('span', 'scenario-copy');
+      copy.append(element('strong', '', item.title), element('small', '', item.guide));
+      button.append(num, copy, element('span', 'scenario-state', item.done ? '試した ✓' : '画面を開く →'));
+      button.addEventListener('click', () => navigate(item.view));
       list.append(button);
     });
   }
@@ -635,7 +640,7 @@
       renderPortal();
     });
   });
-  $('role-select').addEventListener('change', e => { role = e.target.value; renderPortal(); });
+  $('role-select').addEventListener('change', e => { role = e.target.value; renderAll(); });
   $('company-select').addEventListener('change', e => { company = e.target.value; renderPortal(); });
   $('run-download').addEventListener('click', runDownload);
   $('run-sort').addEventListener('click', runSort);
@@ -649,6 +654,7 @@
   $('prepare-payroll-share').addEventListener('click', preparePayrollShare);
   $('case-company').addEventListener('change', renderCases);
   $('case-state').addEventListener('change', renderCases);
+  $('jump-to-scope').addEventListener('click', () => $('scope').scrollIntoView({ behavior: 'smooth', block: 'start' }));
   window.addEventListener('hashchange', () => navigate(location.hash.slice(1)));
   log('デモを開始。公文書4件、メール4件、進捗3件の架空データを読み込みました。');
   renderAll();
