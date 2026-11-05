@@ -768,7 +768,7 @@
       const slot = $('guide-' + id);
       const head = element('div', 'guide-head');
       const title = element('div');
-      title.append(element('span', 'guide-kicker', 'DEMO ' + meta.number + ' / ⑤  ·  架空データ'), element('h2', '', meta.title), element('p', '', '上の白いボタンを順番に押してください。押した結果は下の緑色の欄に残ります。'));
+      title.append(element('span', 'guide-kicker', 'DEMO ' + meta.number + ' / ⑤  ·  架空データ'), element('h2', '', meta.title), element('p', '', '下の青い案内欄にある白いボタンを順番に押してください。結果はその下の緑色の欄に残ります。'));
       head.append(title, element('span', 'guide-mode', '外部サービスへの接続なし'));
       const flow = element('div', 'guide-flow');
       for (const [label, value] of [['入力', meta.source], ['この画面で行うこと', meta.operation], ['確認できる結果', meta.outcome]]) {
