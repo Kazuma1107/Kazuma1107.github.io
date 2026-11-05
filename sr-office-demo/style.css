@@ -195,32 +195,28 @@
 @media(max-width:900px){.payroll-pipeline{grid-template-columns:repeat(3,minmax(0,1fr))}.payroll-totals{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.payroll-command{padding:18px}.payroll-command-actions{display:grid;grid-template-columns:1fr}.payroll-command-actions select{width:100%}.payroll-pipeline{grid-template-columns:repeat(2,minmax(0,1fr))}.payroll-pipeline-panel,.payroll-input-panel,.payroll-formula-panel,.payroll-issues,.payroll-results{padding:17px}.payroll-result-footer{display:block}.payroll-result-footer button{width:100%;margin-top:12px}.payroll-totals strong{font-size:16px}}
 
-/* Persistent guided-operation feedback */
-.guide-head p{font-size:13px}
-.guide-now{align-items:center}
-.guide-now p{font-size:13px}
-.guide-cta{min-width:230px;max-width:350px;line-height:1.45;font-size:13px}
-.guide-result{margin:13px 0 0;padding:15px 17px;border:1px solid #c9e7d9;background:#f1fbf6;border-radius:11px;color:#225543}
-.guide-result.is-empty{border-color:#dce7f2;background:#f7faff;color:#4d6582}
-.guide-result>span{display:block;font-size:11px;font-weight:900;letter-spacing:.06em;margin-bottom:5px}
-.guide-result strong{display:block;font-size:14px;line-height:1.5}
-.guide-result p{font-size:13px;line-height:1.65;margin:5px 0 0}
-.action-dock{position:fixed;right:20px;bottom:20px;z-index:50;width:min(430px,calc(100vw - 40px));padding:18px 20px;border:1px solid #b7d4eb;border-radius:15px;background:#fff;box-shadow:0 18px 50px rgba(16,47,84,.24);color:#274560}
-.action-dock[hidden]{display:none}
-.action-dock-head{display:flex;align-items:start;justify-content:space-between;gap:12px}
-.action-dock-head span{font-size:11px;font-weight:900;color:#2d70b8;letter-spacing:.05em}
-.action-dock-close{border:0;background:#eff4fa;border-radius:8px;width:28px;height:28px;flex:none;font-size:17px;color:#4e6884;cursor:pointer}
-.action-dock strong{display:block;font-size:15px;margin:4px 0 5px}
-.action-dock p{font-size:13px;line-height:1.6;color:#4b6078;margin:0 0 12px}
-.action-dock-next{border-top:1px solid #e0e9f2;padding-top:11px}
-.action-dock-next span{display:block;color:#607791;font-size:11px;font-weight:900;margin-bottom:5px}
-.action-dock-next button{width:100%;text-align:left;border:0;border-radius:8px;background:#1d62b1;color:#fff;padding:11px 13px;font-size:13px;font-weight:800;cursor:pointer}
-.action-dock-next button:disabled{background:#e8eef5;color:#5d7086;cursor:wait}
-.action-dock-next button:focus-visible,.action-dock-close:focus-visible{outline:3px solid #f1a847;outline-offset:2px}
-@media(max-width:760px){.guide-cta{max-width:none;min-width:0}.action-dock{right:10px;bottom:10px;width:calc(100vw - 20px);padding:14px 16px}.action-dock p{max-height:78px;overflow:auto}}
-
-.action-dock-view{border:0;background:transparent;color:#1e65aa;font-size:12px;font-weight:800;padding:2px 0 10px;cursor:pointer;text-decoration:underline}
-.action-dock-view:focus-visible{outline:3px solid #f1a847;outline-offset:2px}
-
+/* Explain the next action beside the real control */
+.demo-guide[hidden]{display:none}
+.guided-control{outline:3px solid #e9a649;outline-offset:3px;box-shadow:0 0 0 6px rgba(238,172,68,.17)!important}
+.inline-guide{min-width:0;max-width:540px;margin:9px 0 4px;padding:13px 15px;border:1px solid #efd8ad;border-left:4px solid #e9a649;border-radius:9px;background:#fffbf3;color:#3a4b62;box-shadow:0 7px 20px rgba(90,62,22,.07)}
+.inline-guide-kicker{display:block;font-size:11px;font-weight:900;color:#9a5b0d;margin-bottom:4px}
+.inline-guide strong{display:block;font-size:14px;line-height:1.5;color:#253c57}
+.inline-guide>p{font-size:12px;line-height:1.65;margin:5px 0 0;color:#52647b}
+.inline-guide-result{border-top:1px solid #eadfc9;margin-top:10px;padding-top:9px}
+.inline-guide-result small{display:block;font-size:11px;font-weight:800;color:#15765d}
+.inline-guide-result p{font-size:12px;line-height:1.6;margin:3px 0 0}
+.inline-guide.is-complete{border-color:#c6dfd2;border-left-color:#2a9a72;background:#f4fbf7}
+.inline-guide.is-complete .inline-guide-kicker{color:#187b5c}
+.release-row{flex-wrap:wrap}
+.release-row>.inline-guide{flex-basis:100%;margin-left:auto}
+.toolbar-actions>.inline-guide,.payroll-command-actions>.inline-guide{flex-basis:100%;width:100%}
+.portal-tabs{flex-wrap:wrap}
+.portal-tabs>.inline-guide{flex-basis:100%;width:100%}
+.portal-controls .inline-guide{max-width:none}
+.side-nav>.inline-guide{font-size:11px;padding:10px;margin:5px 2px 9px}
+.side-nav>.inline-guide strong{font-size:12px}
+.side-nav>.inline-guide>p,.side-nav>.inline-guide-result p{font-size:11px}
+.table-action+.inline-guide{min-width:220px;max-width:310px}
 .payroll-pipeline-step{min-height:100px}
 .payroll-pipeline-step small{line-height:1.45}
+@media(max-width:760px){.inline-guide{max-width:none}.release-row>.inline-guide{margin-left:0}.side-nav>.inline-guide{margin:6px 0}}

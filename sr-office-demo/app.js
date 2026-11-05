@@ -47,52 +47,12 @@
   let company = 'abc';
   let portalTab = 'public';
   let toastTimer;
-  let activeView = 'overview';
-  let dockDismissed = false;
   const guideFeedback = { portal: null, documents: null, mail: null, payroll: null, cases: null };
   function recordGuide(id, action, result) {
     guideFeedback[id] = { action, result };
-    dockDismissed = false;
     renderGuides();
-    renderActionDock();
-  }
-  function runGuideAction(id, state) {
-    const previous = guideFeedback[id];
-    if (!state.run) return;
-    state.run();
-    if (!state.done && id !== 'payroll' && guideFeedback[id] === previous) recordGuide(id, state.action, state.effect);
-  }
-  function renderActionDock() {
-    const dock = $('action-dock');
-    const feedback = guideFeedback[activeView];
-    if (!feedback || dockDismissed) { dock.hidden = true; return; }
-    const guide = $('guide-' + activeView);
-    const rect = guide && guide.getBoundingClientRect();
-    if (rect && rect.bottom > 90 && rect.top < window.innerHeight - 90) { dock.hidden = true; return; }
-    const state = guideStage(activeView);
-    const renderKey = [activeView, feedback.action, feedback.result, state.action, state.done, Boolean(state.run)].join('|');
-    if (dock.dataset.renderKey === renderKey) { dock.hidden = false; return; }
-    const head = element('div', 'action-dock-head');
-    head.append(element('span', '', 'いま行ったこと · ' + views[activeView]));
-    const close = element('button', 'action-dock-close', '×');
-    close.type = 'button';
-    close.setAttribute('aria-label', '操作案内を閉じる');
-    close.addEventListener('click', () => { dockDismissed = true; dock.hidden = true; });
-    head.append(close);
-    const next = element('div', 'action-dock-next');
-    next.append(element('span', '', state.done ? '次の画面' : state.run ? '次に押すボタン' : 'いま自動処理中'));
-    const button = element('button', '', state.run ? state.action + ' →' : '自動処理中 · 追加クリック不要');
-    button.type = 'button';
-    button.disabled = !state.run;
-    if (state.run) button.addEventListener('click', () => runGuideAction(activeView, state));
-    next.append(button);
-    const locations = { portal: 'portal-files', documents: 'document-rows', mail: 'mail-rows', payroll: payrollState.status === 'ready' ? 'payroll-results' : 'payroll-pipeline', cases: 'case-rows' };
-    const viewResult = element('button', 'action-dock-view', '画面で変化した場所を見る ↓');
-    viewResult.type = 'button';
-    viewResult.addEventListener('click', () => $(locations[activeView]).scrollIntoView({ behavior: 'smooth', block: 'center' }));
-    dock.replaceChildren(head, element('strong', '', feedback.action), element('p', '', feedback.result), viewResult, next);
-    dock.dataset.renderKey = renderKey;
-    dock.hidden = false;
+    if (id === 'payroll' && payrollState.prepared) requestAnimationFrame(() => $('payroll-results').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    else scrollToGuidedControl();
   }
   function element(tag, className, text) {
     const n = document.createElement(tag);
@@ -164,6 +124,7 @@
       if (d.status === 'classified' && !d.shared) {
         const btn = element('button', 'table-action', '共有を承認');
         btn.type = 'button';
+        btn.dataset.guideTarget = d.id;
         btn.addEventListener('click', () => shareDocument(d.id));
         actionCell.append(btn);
       } else {
@@ -311,6 +272,7 @@
         copy.append(element('strong', '', r.name), element('small', '', r.ready ? '対象顧問先・版または対象月・閲覧者を確認して公開' : '給与の前後チェック完了後に公開可能'));
         const button = element('button', 'outline', '公開を承認');
         button.type = 'button';
+        button.dataset.guideTarget = r.id;
         button.disabled = !r.ready;
         button.addEventListener('click', () => releaseResource(r.id));
         row.append(copy, button);
@@ -690,6 +652,7 @@
       if (c.stage < c.steps.length - 1) {
         const button = element('button', 'table-action', '次へ：' + c.steps[c.stage + 1]);
         button.type = 'button';
+        button.dataset.guideTarget = c.id;
         const publicationStep = c.stage >= c.steps.length - 3;
         button.disabled = publicationStep && !caseCanComplete(c);
         button.title = button.disabled ? '関連する資料の公開承認が必要です' : '';
@@ -754,41 +717,64 @@
         const phase = Math.min(payrollState.phase, 4);
         return { step: phase + 1, total: 5, action: running[phase][0], effect: running[phase][1], run: null };
       }
-      if (payrollState.status === 'blocked') return { step: 1, total: 1, action: '通常データに切り替えて再実行する', effect: '不備データの確認事項を残して計算を止めました。通常データを使い、今度は自動で最後まで進めます。', run: () => { payrollResetState('normal'); runPayrollAutomation(); } };
+      if (payrollState.status === 'blocked') return { step: 1, total: 2, action: '使う架空データで「通常データ（3名）」を選択', effect: '入力不備で停止中です。通常データを選ぶと、次に給与計算の実行ボタンを案内します。', run: null };
       return { step: 1, total: 1, action: '給与計算を自動実行', effect: '架空の3名分を検証・計算・前月比較し、給与資料を職員の公開承認待ちにします。', run: runPayrollAutomation };
     }
     if (caseActivity) return complete('案件の工程が更新され、担当・期限・次の操作が一覧で確認できます。');
     const caseToAdvance = cases.find(c => c.id === 'PROC-241');
     return { step: 1, total: 1, action: 'PROC-241行の「次へ：' + caseToAdvance.steps[caseToAdvance.stage + 1] + '」', effect: '案件の現在工程と次の操作が更新されます。実際の申請や通知は行いません。', run: () => advanceCase('PROC-241') };
   }
+  function guideTarget(id, state) {
+    const next = { portal: 'documents', documents: 'mail', mail: 'payroll', payroll: 'cases', cases: 'overview' };
+    if (state.done) return document.querySelector('.nav-item[data-nav="' + next[id] + '"]');
+    if (id === 'portal') {
+      const rule = portalResources.find(r => r.id === 'RES-R01');
+      if (company !== 'abc') return $('company-select');
+      if (role !== 'staff' && !rule.published) return $('role-select');
+      if (!rule.published) return document.querySelector('[data-guide-target="RES-R01"]');
+      if (role !== 'client') return $('role-select');
+      return document.querySelector('[data-doc-tab="rules"]');
+    }
+    if (id === 'documents') {
+      if (docs.some(d => d.status === 'received')) return $('run-download');
+      if (docs.some(d => d.status === 'downloaded')) return $('run-sort');
+      return document.querySelector('[data-guide-target="DOC-01"]');
+    }
+    if (id === 'mail') return $('run-mail');
+    if (id === 'payroll') return payrollState.status === 'running' ? $('payroll-pipeline') : payrollState.status === 'blocked' ? $('payroll-scenario') : $('run-payroll');
+    return document.querySelector('[data-guide-target="PROC-241"]');
+  }
+  function scrollToGuidedControl() {
+    const view = document.querySelector('.view:not([hidden])');
+    if (!view || !guideFeedback[view.id] && view.id === 'overview') return;
+    if (!['portal', 'documents', 'mail', 'payroll', 'cases'].includes(view.id) || guideStage(view.id).done) return;
+    const control = view.querySelector('.guided-control');
+    if (control) requestAnimationFrame(() => control.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  }
   function renderGuides() {
+    document.querySelectorAll('.inline-guide').forEach(note => note.remove());
+    document.querySelectorAll('.guided-control').forEach(control => control.classList.remove('guided-control'));
     for (const id of ['portal', 'documents', 'mail', 'payroll', 'cases']) {
-      const meta = guideMeta[id];
-      const state = guideStage(id);
       const slot = $('guide-' + id);
-      const head = element('div', 'guide-head');
-      const title = element('div');
-      title.append(element('span', 'guide-kicker', 'DEMO ' + meta.number + ' / ⑤  ·  架空データ'), element('h2', '', meta.title), element('p', '', '下の青い案内欄にある白いボタンを順番に押してください。結果はその下の緑色の欄に残ります。'));
-      head.append(title, element('span', 'guide-mode', '外部サービスへの接続なし'));
-      const flow = element('div', 'guide-flow');
-      for (const [label, value] of [['入力', meta.source], ['この画面で行うこと', meta.operation], ['確認できる結果', meta.outcome]]) {
-        const card = element('div', 'guide-flow-item');
-        card.append(element('small', '', label), element('strong', '', value));
-        flow.append(card);
-      }
-      const now = element('div', 'guide-now' + (state.done ? ' is-complete' : ''));
-      const copy = element('div');
-      copy.append(element('span', 'guide-step', state.done ? 'この画面は完了 · 次の画面へ' : state.run ? '次に押すボタン ' + state.step + ' / ' + state.total : 'いま自動処理中 ' + state.step + ' / ' + state.total), element('strong', '', state.done ? '操作と結果を確認しました' : state.action), element('p', '', state.effect));
-      const button = element('button', 'guide-cta', state.run ? (state.done ? '次へ：' : '押す：') + state.action + ' →' : '自動処理中 · 追加クリック不要');
-      button.type = 'button';
-      button.setAttribute('aria-label', state.action);
-      if (state.run) button.addEventListener('click', () => runGuideAction(id, state));
-      else button.disabled = true;
-      now.append(copy, button);
+      slot.hidden = true;
+      slot.replaceChildren();
+      if ($(id).hidden) continue;
+      const state = guideStage(id);
+      const target = guideTarget(id, state);
+      if (!target) continue;
+      target.classList.add('guided-control');
+      const note = element('div', 'inline-guide' + (state.done ? ' is-complete' : ''));
+      note.setAttribute('role', 'note');
+      note.append(element('span', 'inline-guide-kicker', state.done ? '次は左メニューのこのボタン' : id === 'payroll' && payrollState.status === 'running' ? '自動処理中 · 追加操作は不要' : '次に操作するのはこの' + (target.tagName === 'SELECT' ? '選択欄' : 'ボタン')));
+      note.append(element('strong', '', state.action));
+      note.append(element('p', '', state.effect));
       const feedback = guideFeedback[id];
-      const result = element('div', 'guide-result' + (feedback ? '' : ' is-empty'));
-      result.append(element('span', '', feedback ? '押した結果 · ここに残ります' : '操作前 · まず上のボタンを押してください'), element('strong', '', feedback ? '押した操作：' + feedback.action : '上の白いボタンが、この画面の最初の操作です。'), element('p', '', feedback ? feedback.result : '押すと、実行内容と結果、次に押すボタンをここに表示します。'));
-      slot.replaceChildren(head, now, result, flow, element('p', 'guide-boundary', meta.boundary + ' ブラウザを再読み込みするとデモの状態は初期化されます。'));
+      if (feedback && !state.done) {
+        const result = element('div', 'inline-guide-result');
+        result.append(element('small', '', '直前の操作：' + feedback.action), element('p', '', feedback.result));
+        note.append(result);
+      }
+      target.insertAdjacentElement('afterend', note);
     }
   }
   function renderScenario() {
@@ -823,14 +809,12 @@
     renderPayroll();
     renderCases();
     renderGuides();
-    renderActionDock();
     renderScenario();
     updateCounts();
     renderLogs();
   }
   function navigate(id) {
     if (!views[id]) id = 'overview';
-    activeView = id;
     document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== id; });
     document.querySelectorAll('[data-nav]').forEach(n => {
       const active = n.dataset.nav === id && n.classList.contains('nav-item');
@@ -842,7 +826,8 @@
     $('breadcrumb').textContent = views[id];
     if (location.hash !== '#' + id) historyReplace(id);
     window.scrollTo({ top: 0, behavior: 'auto' });
-    renderActionDock();
+    renderGuides();
+    scrollToGuidedControl();
   }
   function historyReplace(id) {
     window.history.replaceState(null, '', '#' + id);
@@ -880,8 +865,6 @@
   $('case-state').addEventListener('change', renderCases);
   $('jump-to-scope').addEventListener('click', () => $('scope').scrollIntoView({ behavior: 'smooth', block: 'start' }));
   window.addEventListener('hashchange', () => navigate(location.hash.slice(1)));
-  window.addEventListener('scroll', renderActionDock, { passive: true });
-  window.addEventListener('resize', renderActionDock);
   log('デモを開始。公文書4件、メール4件、進捗3件の架空データを読み込みました。');
   renderAll();
   navigate(location.hash.slice(1));
