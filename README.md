@@ -9,6 +9,7 @@
 | 保護猫カフェ | [開く](https://kazuma1107.github.io/cat-cafe/) | 架空の保護猫カフェ・5ページ構成 |
 | 転職エージェントLP | [開く](https://kazuma1107.github.io/career-lp/) | 架空のキャリア相談サービスLP |
 | 大阪のパーソナルジム | [開く](https://kazuma1107.github.io/gym/) | トップ・料金・トレーナー紹介の提案用モック |
+| 社労士事務所OS | [操作デモ](https://kazuma1107.github.io/sr-office-demo/) | SharePoint／SPFx導入想定。公文書仕分け・公開承認・顧問先ポータル・進捗管理 |
 
 デモは自主制作・架空データです。受託実績や実在する店舗・サービスを示すものではありません。
 

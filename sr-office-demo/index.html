@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17345d">
+  <meta name="description" content="社労士事務所の情報共有、公文書仕分け、進捗管理を一連の操作で示す、SharePoint / SPFx導入想定の自主制作デモ。">
+  <title>社労士事務所OS | SharePoint / SPFx 導入想定デモ</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+  <div class="topbar">
+    <div class="topbar-left"><span class="launcher" aria-hidden="true">▦</span><span class="topbar-product">Microsoft 365 / SharePoint 導入想定</span><span class="topbar-divider"></span><strong>事務所OS</strong></div>
+    <div class="topbar-right"><span class="topbar-demo">架空データの操作デモ</span><span class="avatar" aria-hidden="true">K</span></div>
+  </div>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="デモのナビゲーション">
+      <a class="identity" href="#overview" data-nav="overview"><span class="identity-mark" aria-hidden="true">OS</span><span><strong>OfficeFlow</strong><small>社労士事務所向け構想</small></span></a>
+      <div class="side-section">WORKSPACE</div>
+      <nav class="side-nav" aria-label="画面を切り替える">
+        <button type="button" class="nav-item is-active" data-nav="overview" aria-current="page"><span aria-hidden="true">◫</span>概要・業務フロー</button>
+        <button type="button" class="nav-item" data-nav="documents"><span aria-hidden="true">▤</span>公文書の自動仕分け <span id="nav-review" class="nav-count">0</span></button>
+        <button type="button" class="nav-item" data-nav="portal"><span aria-hidden="true">▣</span>顧問先ポータル</button>
+        <button type="button" class="nav-item" data-nav="payroll"><span aria-hidden="true">▥</span>給与・手続の進捗</button>
+      </nav>
+      <div class="side-section second">DESIGN NOTES</div>
+      <nav class="side-nav" aria-label="設計について">
+        <button type="button" class="nav-item" data-nav="architecture"><span aria-hidden="true">◇</span>本番構成と検証事項</button>
+      </nav>
+      <div class="side-foot"><span class="green-dot"></span><span>体験用プロトタイプ</span><small>外部サービスとの接続なし</small></div>
+    </aside>
+
+    <main id="main" class="main">
+      <div class="bread"><span>SharePoint / SPFx 導入想定</span><span aria-hidden="true">/</span><strong id="breadcrumb">概要・業務フロー</strong></div>
+
+      <section class="view" id="overview" aria-labelledby="overview-title">
+        <div class="hero">
+          <div class="hero-copy"><span class="eyebrow">INTERACTIVE CONCEPT / 2026</span><h1 id="overview-title">一つの入社手続を、<br><em>顧問先への共有まで。</em></h1><p>書類の取得・仕分け・確認・共有と、同月の給与計算。職員と顧問先、それぞれに必要な情報が届く流れを操作で確認できます。</p><div class="hero-actions"><button class="primary" type="button" data-go="documents">公文書の流れを試す <span aria-hidden="true">→</span></button><button class="ghost" type="button" data-go="architecture">実装方針を見る</button></div></div>
+          <div class="hero-visual" aria-label="業務フローの概要"><div class="visual-label">入社手続 / SAMPLE CASE</div><div class="visual-person"><span class="person-icon" aria-hidden="true">人</span><span><strong>山田 太郎</strong><small>株式会社ABC · 架空の入社手続</small></span><span class="state-chip">進行中</span></div><div class="visual-route"><span>電子申請</span><b>→</b><span>公文書確認</span><b>→</b><span>顧問先共有</span></div><div class="visual-bottom"><span class="pulse-dot"></span>給与計算の進捗も同じ画面で確認</div></div>
+        </div>
+        <div class="notice" role="note"><span aria-hidden="true">ⓘ</span><p><strong>自主制作の選考用デモです。</strong>すべて架空データです。SharePoint、SPFx、Cells、弥生給与、Microsoft 365には接続していません。表示上の権限切り替えは、本番の認証・アクセス制御を代替しません。</p></div>
+        <div class="section-title"><div><span class="eyebrow dark">AT A GLANCE</span><h2>まず、今日の状況が分かる。</h2></div><p>操作後はこの数値と履歴が連動します。</p></div>
+        <div class="kpi-grid">
+          <article class="kpi"><span class="kpi-icon blue">▤</span><span>受信した公文書</span><strong id="kpi-received">4<small>件</small></strong><em>架空のサンプル</em></article>
+          <article class="kpi"><span class="kpi-icon orange">!</span><span>要確認</span><strong id="kpi-review">0<small>件</small></strong><em>自動判定できない文書</em></article>
+          <article class="kpi"><span class="kpi-icon green">✓</span><span>顧問先へ共有済み</span><strong id="kpi-shared">0<small>件</small></strong><em>職員の確認後に公開</em></article>
+          <article class="kpi"><span class="kpi-icon purple">◷</span><span>給与チェック完了</span><strong id="kpi-payroll">0<small>/ 4</small></strong><em>株式会社ABC / 11月分</em></article>
+        </div>
+        <div class="section-title slim"><div><span class="eyebrow dark">ONE CONNECTED JOURNEY</span><h2>操作できる4つの場面</h2></div></div>
+        <div class="journey">
+          <button type="button" class="journey-card" data-go="documents"><span>01</span><div class="journey-symbol blue">▤</div><h3>公文書を受信・仕分け</h3><p>事業所番号と重複キーで照合。判別不能な書類は要確認へ。</p><b>画面を開く →</b></button>
+          <button type="button" class="journey-card" data-go="portal"><span>02</span><div class="journey-symbol green">▣</div><h3>顧問先に安全に共有</h3><p>公開承認後、顧問先担当者には自社の文書だけを表示。</p><b>画面を開く →</b></button>
+          <button type="button" class="journey-card" data-go="payroll"><span>03</span><div class="journey-symbol purple">▥</div><h3>給与・手続の進捗</h3><p>勤怠受領から明細共有まで、抜け漏れを確認。</p><b>画面を開く →</b></button>
+          <button type="button" class="journey-card" data-go="architecture"><span>04</span><div class="journey-symbol ink">◇</div><h3>本番構成と運用</h3><p>SPFx、SharePoint、Power Automateでの構成と事前検証項目。</p><b>画面を開く →</b></button>
+        </div>
+        <div class="overview-bottom"><div><span class="eyebrow dark">AUDIT TRAIL</span><h2>何が起きたかを残す。</h2><p>仕分け、確認、共有、進捗更新の操作を一覧で追えます。本番ではMicrosoft 365の監査・保持設定と合わせて設計します。</p></div><ol id="overview-log" class="timeline"></ol></div>
+      </section>
+
+      <section class="view" id="documents" aria-labelledby="documents-title" hidden>
+        <div class="page-header"><div><span class="eyebrow dark">01 / DOCUMENT AUTOMATION</span><h1 id="documents-title">公文書の受信と仕分け</h1><p>架空のPDF4件を対象に、事業所番号・重複キーを照合します。不明な書類は自動公開せず、職員の確認に回します。</p></div><span class="page-header-icon" aria-hidden="true">▤</span></div>
+        <div class="flow-strip"><div><span>01</span><strong>受信</strong><small>架空のPDF</small></div><b>→</b><div><span>02</span><strong>照合</strong><small>事業所番号・重複</small></div><b>→</b><div><span>03</span><strong>人が確認</strong><small>不明な書類を隔離</small></div><b>→</b><div><span>04</span><strong>共有承認</strong><small>顧問先へ公開</small></div></div>
+        <div class="toolbar"><div><strong>受信ボックス</strong><small>例示用データ。実際のセルズ台帳等から取得しません。</small></div><div class="toolbar-actions"><button class="primary" id="run-sort" type="button">仕分けを実行</button><button class="outline" id="reset-sort" type="button">文書処理を初期化</button></div></div>
+        <div class="work-grid"><div class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>文書</th><th>照合情報</th><th>判定</th><th>操作</th></tr></thead><tbody id="document-rows"></tbody></table></div></div><aside class="panel side-panel"><span class="eyebrow dark">REVIEW QUEUE</span><h2>要確認と公開承認</h2><p>識別できない文書は、誤配信を避けるため確認待ちにします。</p><div id="review-queue"></div><hr><div class="assurance"><span aria-hidden="true">◇</span><div><strong>再実行しても二重登録しない設計</strong><p>文書IDと内容ハッシュ相当のキーを用いた説明用判定です。本番では取得元の一意IDと更新履歴を確認します。</p></div></div></aside></div>
+        <div class="panel log-panel"><div class="panel-heading"><div><span class="eyebrow dark">OPERATION LOG</span><h2>処理履歴</h2></div><span class="tiny-label">ブラウザ内のみ</span></div><ol id="document-log" class="timeline compact"></ol></div>
+      </section>
+
+      <section class="view" id="portal" aria-labelledby="portal-title" hidden>
+        <div class="page-header"><div><span class="eyebrow dark">02 / CLIENT PORTAL</span><h1 id="portal-title">顧問先ポータル</h1><p>職員が確認して公開した文書だけを、顧問先ごとの画面に表示。表示対象は役割と顧問先の切り替えに連動します。</p></div><span class="page-header-icon green" aria-hidden="true">▣</span></div>
+        <div class="notice warning"><span aria-hidden="true">!</span><p><strong>権限表示はシミュレーションです。</strong>本番ではテナント、Entra ID、SharePointのサイト・ライブラリ権限、外部ゲストの招待・失効を確認します。</p></div>
+        <div class="portal-controls panel"><div><label for="role-select">表示する役割</label><select id="role-select"><option value="staff">事務所職員</option><option value="client">顧問先担当者（株式会社ABC）</option></select></div><div><label for="company-select">対象の顧問先</label><select id="company-select"><option value="abc">株式会社ABC</option><option value="def">有限会社北斗工業</option></select></div><div class="portal-access" id="access-note"></div></div>
+        <div class="portal-header"><div class="company-logo" id="company-monogram">ABC</div><div><span>顧問先ワークスペース</span><h2 id="company-title">株式会社ABC</h2><p id="company-meta">事業所番号 28001234 · 架空データ</p></div><span class="portal-secure">閲覧範囲を限定</span></div>
+        <div class="portal-tabs" role="tablist" aria-label="資料の種類"><button type="button" class="is-active" data-doc-tab="public" role="tab" aria-selected="true">公文書</button><button type="button" data-doc-tab="payroll" role="tab" aria-selected="false">給与資料</button><button type="button" data-doc-tab="rules" role="tab" aria-selected="false">就業規則</button></div>
+        <div class="panel portal-content"><div class="panel-heading"><div><span class="eyebrow dark" id="portal-category">PUBLIC DOCUMENTS</span><h2 id="portal-section-title">公文書</h2></div><span class="tiny-label" id="portal-count">0件</span></div><div id="portal-files" class="file-grid"></div></div>
+        <div class="split-notes"><div class="info-card"><span aria-hidden="true">01</span><div><strong>公開前の承認</strong><p>自動で振り分けても、顧問先への公開は職員の確認後。誤送付を防ぐ段階を設けます。</p></div></div><div class="info-card"><span aria-hidden="true">02</span><div><strong>会社間の分離</strong><p>実装時は画面の表示条件だけでなく、SharePoint側のアクセス権で会社ごとに分離します。</p></div></div></div>
+      </section>
+
+      <section class="view" id="payroll" aria-labelledby="payroll-title" hidden>
+        <div class="page-header"><div><span class="eyebrow dark">03 / MONTHLY OPERATIONS</span><h1 id="payroll-title">給与・手続の進捗</h1><p>株式会社ABCの11月分。作業の順序と確認者を見える化し、終わっていない工程を残します。</p></div><span class="page-header-icon purple" aria-hidden="true">▥</span></div>
+        <div class="payroll-summary"><div><span>対象月</span><strong>2026年11月</strong></div><div><span>顧問先</span><strong>株式会社ABC</strong></div><div><span>進捗</span><strong id="payroll-progress">0 / 4 完了</strong></div><div><span>次の確認</span><strong id="payroll-next">勤怠データの受領</strong></div></div>
+        <div class="payroll-layout"><div class="panel"><div class="panel-heading"><div><span class="eyebrow dark">MONTHLY CHECKLIST</span><h2>処理ステップ</h2></div><button id="reset-payroll" class="text-button" type="button">進捗を初期化</button></div><div id="payroll-steps" class="checklist"></div></div><div class="panel guidance-panel"><span class="eyebrow dark">HANDOFF & EXCEPTIONS</span><h2>自動化と人の判断を分ける。</h2><div class="guidance-item"><span>✓</span><p><strong>定型部分</strong>受領確認、入力漏れの検知、担当者への通知、進捗台帳の更新</p></div><div class="guidance-item"><span>!</span><p><strong>職員の判断</strong>例外的な勤怠、手当、法令・就業規則の適用、最終的な給与確定</p></div><div class="guidance-item"><span>↺</span><p><strong>復旧</strong>失敗した処理の特定、再実行、二重送信の確認、責任者への引き継ぎ</p></div><div class="small-note">この画面は進捗管理の操作デモです。給与計算や電子申請を実行しません。</div></div></div>
+      </section>
+
+      <section class="view" id="architecture" aria-labelledby="architecture-title" hidden>
+        <div class="page-header"><div><span class="eyebrow dark">04 / IMPLEMENTATION PLAN</span><h1 id="architecture-title">SharePoint / SPFx 実装方針</h1><p>このデモを本番環境へ移す場合の構成案です。現行ライセンス、外部共有方針、接続元の仕様を調査してから確定します。</p></div><span class="page-header-icon ink" aria-hidden="true">◇</span></div>
+        <div class="architecture-map"><div class="architecture-node front"><span>FRONTEND</span><strong>SPFx Web パーツ</strong><p>職員ダッシュボード／顧問先画面／確認キュー</p></div><b>↕</b><div class="architecture-node"><span>DATA & ACCESS</span><strong>SharePoint</strong><p>顧問先単位のサイト・ライブラリ、Microsoft Lists、版管理</p></div><b>↕</b><div class="architecture-node"><span>AUTOMATION</span><strong>Power Automate</strong><p>取得・照合・通知・承認フロー。接続可能な範囲を検証</p></div></div>
+        <div class="design-grid"><article class="design-card"><span>01 / ACCESS</span><h2>顧問先ごとの境界</h2><p>Entra IDのゲスト招待、SharePointのサイト／ライブラリ権限、退職・契約終了時の失効を設計。画面表示だけで保護しません。</p></article><article class="design-card"><span>02 / DOCUMENTS</span><h2>誤配信を防ぐ仕分け</h2><p>事業所番号など確定情報で照合し、曖昧な文書は隔離。公開は職員承認を経て、誰が判断したかを記録します。</p></article><article class="design-card"><span>03 / OPERATIONS</span><h2>内製できる運用</h2><p>先行3〜5社でテンプレートと追加手順を検証。失敗・再実行・権限変更の手順書を残し、職員が運用できる形にします。</p></article><article class="design-card"><span>04 / INTEGRATION</span><h2>接続可否を先に調べる</h2><p>セルズ台帳、弥生給与 Next、Dropbox等の公式な連携方法・利用条件を確認。利用できない連携を実装済みとは扱いません。</p></article></div>
+        <div class="implementation-note"><div><span class="eyebrow">PROTOTYPE BOUNDARY</span><h2>このデモで示せること</h2><p>画面構成、操作の流れ、判定不能時の扱い、公開承認、顧問先別の見え方、進捗管理です。</p></div><div><span class="eyebrow">BEFORE PRODUCTION</span><h2>本番前に確かめること</h2><p>ライセンスと外部共有ポリシー、製品API・取得方法、既存データ量、法令・契約、監査・保持、Copilotの参照範囲と費用です。</p></div></div>
+        <div class="notice"><span aria-hidden="true">ⓘ</span><p>このサイトはSharePointやSPFxの稼働画面ではなく、導入を想定して独自に制作したフロントエンドのコンセプトです。実在の職員、顧問先、個人情報は使用していません。</p></div>
+      </section>
+      <footer class="footer"><span>© 2026 KazumaTeraokashoten · 自主制作デモ</span><span>架空データ / 外部送信なし</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
