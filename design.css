@@ -43,10 +43,10 @@ header .wrap { max-width: none; min-height: 82px; padding-inline: clamp(24px, 5v
   border: 1px solid #fff9;
 }
 .brand .monogram:after { display: none; }
-nav { gap: clamp(14px, 2.2vw, 34px); font-size: 11px; font-weight: 700; letter-spacing: .06em; }
-nav a { color: #e4f0f5; }
-nav a:hover { color: #fff; }
-nav a:after { background: #fff; }
+header nav { gap: clamp(14px, 2.2vw, 34px); font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+header nav a { color: #e4f0f5; }
+header nav a:hover { color: #fff; }
+header nav a:after { background: #fff; }
 .scroll-track { height: 2px; }
 .scroll-progress { background: #c9e8f5; box-shadow: none; }
 
@@ -188,7 +188,7 @@ nav a:after { background: #fff; }
   letter-spacing: .14em;
 }
 .hero-tabs button[aria-selected="true"] { border-top: 3px solid #fff; padding-top: 10px; color: #fff; }
-.hero-tabs button:hover { color: #fff; background: transparent; border-color: #fff; }
+.hero-tabs button:hover:not(:disabled) { color: #fff; background: transparent; border-color: #fff; }
 .hero-controls { display: flex; gap: 8px; }
 .hero-controls button {
   width: 43px;
@@ -383,9 +383,9 @@ footer { border-color: var(--line); }
 @media (max-width: 760px) {
   .wrap { padding-inline: 22px; }
   header .wrap { min-height: 68px; padding-inline: 22px; }
-  nav a { display: none; }
-  nav a[href="#experience"], nav a[href="#demo"], nav a[href="#work"] { display: block; }
-  nav { gap: 15px; font-size: 10px; }
+  header nav a { display: none; }
+  header nav a[href="#experience"], header nav a[href="#demo"], header nav a[href="#work"] { display: block; }
+  header nav { gap: 15px; font-size: 10px; }
   .hero.cinematic-hero { min-height: 730px; }
   .hero-inner { min-height: 730px; padding: 100px 24px 24px; }
   .hero-meta span:last-child { display: none; }
@@ -412,7 +412,7 @@ footer { border-color: var(--line); }
 }
 @media (max-width: 480px) {
   .brand { font-size: 11px; }
-  nav a[href="#demo"] { display: none; }
+  header nav a[href="#demo"] { display: none; }
   .hero.cinematic-hero { min-height: 700px; }
   .hero-inner { min-height: 700px; padding-inline: 20px; }
   .hero-meta { font-size: 9px; }
@@ -443,3 +443,4 @@ footer { border-color: var(--line); }
   .hero-art { display: none; }
 }
 .hero.cinematic-hero > .hero-art { position: absolute; inset: 0; z-index: 0; }
+.chapter-nav a { color: var(--ink); }
