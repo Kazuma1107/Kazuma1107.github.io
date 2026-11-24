@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="kintoneの工事管理・Excel移行・汎用グリッドプラグインと、SharePoint／SPFxポータルの実装事例。担当範囲、技術判断、検証内容を紹介します。">
+  <title>実装事例 | KAZUMA</title>
+  <style>
+    :root { --blue:#164a6d; --deep:#103a58; --ink:#173047; --muted:#526a79; --line:#cbd8df; --paper:#f2f6f7; --white:#fff; --aqua:#c9e8f5; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:80px; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.8 "Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif; }
+    a { color:inherit; }
+    a:focus-visible { outline:3px solid #dca77a; outline-offset:4px; }
+    .wrap { max-width:1160px; margin:auto; padding-inline:clamp(22px,5vw,72px); }
+    .topbar { background:var(--deep); color:#fff; border-bottom:1px solid #ffffff33; }
+    .topbar .wrap { display:flex; justify-content:space-between; align-items:center; min-height:70px; gap:20px; }
+    .brand { font-size:15px; font-weight:800; letter-spacing:.14em; text-decoration:none; }
+    .back { font-size:14px; text-decoration:none; border-bottom:1px solid #a9d8e8; }
+    .hero { background:var(--blue); color:white; padding:clamp(56px,8vw,108px) 0 60px; }
+    .eyebrow { color:#bfe1ed; letter-spacing:.16em; font-size:14px; font-weight:700; }
+    h1 { max-width:900px; margin:20px 0; font-size:clamp(40px,6vw,76px); line-height:1.25; letter-spacing:-.045em; }
+    .hero p { max-width:730px; margin:0; color:#e0f0f5; font-size:17px; }
+    .index { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#bcd4df; margin-top:55px; border:1px solid #bcd4df; }
+    .index a { display:block; min-height:112px; padding:19px; background:var(--deep); text-decoration:none; }
+    .index a:hover { background:#205d81; }
+    .index small { display:block; color:#b5d7e5; font-size:13px; }
+    .index strong { display:block; margin-top:8px; font-size:16px; line-height:1.45; }
+    main { padding-block:18px 80px; }
+    .case { padding-block:75px; border-bottom:1px solid var(--line); }
+    .case-head { display:grid; grid-template-columns:190px 1fr; gap:30px; align-items:start; }
+    .case-type { color:#287290; font-size:14px; font-weight:800; letter-spacing:.09em; }
+    h2 { margin:0; font-size:clamp(30px,3.3vw,46px); line-height:1.35; letter-spacing:-.035em; }
+    .lead { max-width:760px; margin:22px 0 34px; font-size:18px; color:#344e5c; }
+    .case-body { display:grid; grid-template-columns:1fr 1.2fr; gap:clamp(26px,5vw,72px); }
+    .flow { background:#e4eef2; border-top:4px solid var(--blue); padding:26px; align-self:start; }
+    .flow strong { display:block; margin-bottom:20px; font-size:15px; }
+    .flow ol { margin:0; padding:0; list-style:none; display:grid; gap:12px; }
+    .flow li { padding:14px 16px; border:1px solid #c3d4dc; background:#fff; font-size:15px; font-weight:700; }
+    .flow li span { display:block; color:#587380; font-size:13px; font-weight:400; }
+    .flow-note { margin:17px 0 0; color:#536c79; font-size:14px; }
+    dl { margin:0; }
+    dt { margin-top:19px; padding-top:16px; border-top:1px solid var(--line); font-weight:800; font-size:15px; }
+    dt:first-child { margin-top:0; }
+    dd { margin:7px 0 0; color:#415a67; font-size:16px; }
+    .first-step { margin-top:30px; padding:23px 26px; border-left:4px solid var(--blue); background:#fff; }
+    .first-step strong { display:block; font-size:15px; }
+    .first-step p { margin:7px 0 0; font-size:16px; }
+    .trust { margin:60px 0 0; padding:28px 32px; background:#dfeaf0; color:#355263; font-size:15px; }
+    .trust strong { display:block; color:var(--ink); margin-bottom:7px; }
+    .cta { margin-top:42px; display:flex; flex-wrap:wrap; gap:14px; }
+    .cta a { display:inline-block; padding:13px 20px; background:var(--deep); color:#fff; font-weight:700; font-size:15px; text-decoration:none; }
+    .cta a.secondary { background:transparent; color:var(--deep); border:1px solid var(--deep); }
+    footer { border-top:1px solid var(--line); padding:25px 0; color:var(--muted); font-size:14px; }
+    @media(max-width:800px) { .index { grid-template-columns:repeat(2,1fr); } .case-head,.case-body { grid-template-columns:1fr; } .case-head { gap:8px; } .case { padding-block:50px; } }
+    @media(max-width:520px) { .index { grid-template-columns:1fr; } .index a { min-height:80px; } .hero p,.lead { font-size:16px; } }
+    @media print { .topbar,.index,.cta { display:none; } .hero { padding:25px 0; } .case { break-inside:avoid; padding-block:25px; } .case-body { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="topbar"><div class="wrap"><a class="brand" href="../">KAZUMA</a><a class="back" href="../#experience">ポートフォリオに戻る</a></div></div>
+  <header class="hero"><div class="wrap"><div class="eyebrow">IMPLEMENTATION / CASE STUDIES</div><h1>何を作り、どこで工夫したか。</h1><p>実務で担当した業務システムと、開発中の自作プラグインを分けて紹介します。顧客固有の資料・データ・画面は載せず、実装の判断と確認方法を公開できる範囲で整理しました。</p>
+    <nav class="index" aria-label="事例を選ぶ">
+      <a href="#outdoor"><small>kintone / 実務</small><strong>設備工事の管理票</strong></a>
+      <a href="#indoor"><small>kintone / 実務</small><strong>Excel管理票の移行</strong></a>
+      <a href="#plugin"><small>kintone / 自作・検証</small><strong>汎用グリッドプラグイン</strong></a>
+      <a href="#spfx"><small>SPFx / 社内プレビュー</small><strong>申請・予約ポータル</strong></a>
+    </nav>
+  </div></header>
+  <main class="wrap">
+    <article class="case" id="outdoor">
+      <div class="case-head"><div class="case-type">KINTONE / 実務</div><div><h2>設備工事の管理票を、現場で扱える画面へ。</h2><p class="lead">Excel・CSV由来の案件データをkintoneへ取り込み、探す・直す・確認する操作を一つの業務画面につなげました。</p></div></div>
+      <div class="case-body">
+        <div class="flow"><strong>公開説明用の処理図</strong><ol><li>取込<span>列と項目を対応付け、入力値を検証</span></li><li>照合<span>同じ案件を見つけ、重複・競合を確認</span></li><li>一覧で処理<span>検索・行編集・工程の条件判定・出力</span></li></ol><p class="flow-note">図は実システムの画面やデータを再掲したものではありません。</p></div>
+        <div><dl><dt>担当した範囲</dt><dd>業務ルールの整理、項目の対応付け、一覧・取込・出力処理、入力条件の実装と検証。</dd><dt>実装上の難所</dt><dd>大量レコードを分割して取得・更新し、重複と同時編集による意図しない上書きを防ぐこと。担当者や業務状態に応じて操作可能な範囲を切り替えること。</dd><dt>確認した動作</dt><dd>正常な取込だけでなく、項目の欠落、重複、保存失敗、更新競合が起きたときに理由を示し、入力を失わず再確認できる流れを重視しました。</dd></dl><div class="first-step"><strong>最初にご依頼いただける単位</strong><p>既存アプリの一覧・取込・出力から対象機能を一つ選び、現状調査、改修、確認結果と変更手順までを成果物として切り出せます。</p></div></div>
+      </div>
+    </article>
+    <article class="case" id="indoor">
+      <div class="case-head"><div class="case-type">KINTONE / 実務</div><div><h2>数百項目のExcel管理票を、kintoneへ移す。</h2><p class="lead">4G／5G設備で異なる項目や型を整理し、元の帳票に慣れた利用者が検索・編集・出力できる一覧を設計しました。</p></div></div>
+      <div class="case-body">
+        <div class="flow"><strong>公開説明用の処理図</strong><ol><li>棚卸し<span>元帳票の列、データ型、4G／5G差分を整理</span></li><li>対応付け<span>kintone項目と移行条件を定義</span></li><li>運用画面<span>列検索・日付範囲・表示設定・Excel出力</span></li></ol><p class="flow-note">実際の帳票や顧客データは掲載していません。</p></div>
+        <div><dl><dt>担当した範囲</dt><dd>元データの項目調査、マッピング、一覧画面、取込・表示・出力機能の実装と検証。</dd><dt>実装上の難所</dt><dd>列数の多い帳票の対応関係を崩さず、日付・選択値などの型を揃えること。検索結果と出力結果が一致するよう、条件を共有すること。</dd><dt>確認した動作</dt><dd>列ごとの検索、日付範囲、並べ替え、列幅と表示項目の設定、一覧からの編集、既存テンプレートへのExcel出力を段階ごとに確認しました。</dd></dl><div class="first-step"><strong>最初にご依頼いただける単位</strong><p>帳票1種類の項目棚卸しと移行設計、または既存kintone一覧の検索・出力改善から始められます。</p></div></div>
+      </div>
+    </article>
+    <article class="case" id="plugin">
+      <div class="case-head"><div class="case-type">KINTONE / 自作・検証中</div><div><h2>アプリごとに作り直さない、汎用グリッド。</h2><p class="lead">kintoneのカスタム一覧で、表示・検索・編集する項目を設定画面から選べる自作プラグインを開発しています。受託納品実績としては表示していません。</p></div></div>
+      <div class="case-body">
+        <div class="flow"><strong>機能の構成</strong><ol><li>設定<span>表示・編集・検索項目を選ぶ</span></li><li>操作<span>フィルタ、列移動、貼り付け、行編集</span></li><li>保存<span>入力検証、権限確認、競合検出</span></li></ol><p class="flow-note">顧客の実データ・設定内容は使用していません。</p></div>
+        <div><dl><dt>実装した機能</dt><dd>Excel風フィルタ、日付条件、列幅・列順の変更、複数セルの選択と貼り付け、インライン編集、CSV出力、Undo／Redo、表示プリセット。</dd><dt>安全な更新</dt><dd>保存前の入力値検証、kintoneの編集権限との連動、revisionを用いた競合検出、失敗した保存の再試行と離脱警告を組み込みました。</dd><dt>現在の段階</dt><dd>機能を分割して実装し、ビルドと検証を行っています。外部顧客への提供や利用成果を示すものではありません。</dd></dl><div class="first-step"><strong>関連してお引き受けできること</strong><p>既存アプリの一覧・編集画面の改善や、プラグイン化の可否調査を機能単位でご相談いただけます。</p></div></div>
+      </div>
+    </article>
+    <article class="case" id="spfx">
+      <div class="case-head"><div class="case-type">SHAREPOINT / 社内プレビュー</div><div><h2>申請・予約を、社内ポータルの一つの入口へ。</h2><p class="lead">SharePoint／SPFxとReact・TypeScriptで、情報掲載に加えて申請や予約を使えるポータルを開発しています。</p></div></div>
+      <div class="case-body">
+        <div class="flow"><strong>公開説明用の構成図</strong><ol><li>ポータル<span>お知らせ、メニュー、用途別入口</span></li><li>Webパーツ<span>在宅勤務・名刺・ダウンロード申請、会議室・車両予約</span></li><li>SharePointリスト<span>申請状態、予約対象、編集権限を管理</span></li></ol><p class="flow-note">接続先のリスト名・URL・画面は公開していません。</p></div>
+        <div><dl><dt>担当した範囲</dt><dd>用途別Webパーツ、リストと連動するメニュー・お知らせ、編集モード、狭い画面向けの表示を実装しました。</dd><dt>実装上の難所</dt><dd>申請状態と権限、予約の重複、入力条件を整理し、操作する人に理由が伝わる表示にすること。データ取得に失敗したときはエラーと再読み込み方法を示します。</dd><dt>現在の段階</dt><dd>社内プレビュー環境で機能を検証中です。ポータル本体を本番展開済みとは表示していません。</dd></dl><div class="first-step"><strong>最初にご依頼いただける単位</strong><p>既存ポータルのWebパーツ1点、申請フォーム1件、またはSharePointリストと画面の連携改修から始められます。</p></div></div>
+      </div>
+    </article>
+    <aside class="trust"><strong>公開範囲について</strong>守秘義務に配慮し、顧客名・実際の業務データ・画面・ソースコードは公開していません。図は公開説明用に再構成しました。案件ごとの成果物、金額、納期は既存環境と受入条件を確認して決めます。</aside>
+    <div class="cta"><a href="../#work">相談の進め方を見る</a><a class="secondary" href="../">ポートフォリオのトップへ</a></div>
+  </main>
+  <footer><div class="wrap">© 2026 kazuma · 業務システム開発ポートフォリオ</div></footer>
+</body>
+</html>
